@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { 
   Link2, 
@@ -13,7 +13,9 @@ import {
   Settings,
   ChevronDown,
   Globe,
-  Crown
+  Crown,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,8 +39,28 @@ const languages = [
 ];
 
 export function Header() {
-  const { user, isAuthenticated, logout, language, setLanguage } = useAppStore();
+  const { user, isAuthenticated, logout, language, setLanguage, theme, setTheme } = useAppStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Apply theme to document
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+  };
+
+  const isDark = theme === 'dark';
 
   const handleLogout = async () => {
     logout();
@@ -79,7 +101,25 @@ export function Header() {
         </nav>
 
         {/* Right Section */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden sm:flex"
+            onClick={toggleTheme}
+            title={isDark 
+              ? (language === 'ar' ? 'الوضع النهاري' : 'Light Mode')
+              : (language === 'ar' ? 'الوضع الليلي' : 'Dark Mode')
+            }
+          >
+            {isDark ? (
+              <Sun className="h-5 w-5 text-amber-500" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+
           {/* Language Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -212,6 +252,24 @@ export function Header() {
               </Link>
             ))}
             <div className="border-t mt-2 pt-2">
+              {/* Mobile Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-2 w-full py-2 text-sm"
+              >
+                {isDark ? (
+                  <>
+                    <Sun className="w-4 h-4 text-amber-500" />
+                    <span>{language === 'ar' ? 'الوضع النهاري' : 'Light Mode'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4" />
+                    <span>{language === 'ar' ? 'الوضع الليلي' : 'Dark Mode'}</span>
+                  </>
+                )}
+              </button>
+              {/* Mobile Language Options */}
               {languages.map((lang) => (
                 <button
                   key={lang.code}
