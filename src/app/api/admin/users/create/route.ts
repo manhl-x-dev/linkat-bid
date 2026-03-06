@@ -77,31 +77,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create user in Firebase Auth
+    // Create user in Firebase Auth (if available)
     let firebaseUid: string | null = null;
     
-    try {
-      const userRecord = await adminAuth.createUser({
-        email: email.toLowerCase(),
-        password,
-        displayName: name,
-        emailVerified: false,
-      });
-      firebaseUid = userRecord.uid;
+    if (adminAuth) {
+      try {
+        const userRecord = await adminAuth.createUser({
+          email: email.toLowerCase(),
+          password,
+          displayName: name,
+          emailVerified: false,
+        });
+        firebaseUid = userRecord.uid;
 
-      // Set custom claims for role
-      await adminAuth.setCustomUserClaims(firebaseUid, { role });
-    } catch (firebaseError: any) {
-      // If Firebase creation fails, we'll continue with database-only creation
-      console.error('Firebase user creation failed:', firebaseError.message);
-      
-      // Check if it's because user already exists in Firebase
-      if (firebaseError.code === 'auth/email-already-exists') {
-        return NextResponse.json(
-          { error: 'User with this email already exists in Firebase' },
-          { status: 409 }
-        );
+        // Set custom claims for role
+        await adminAuth.setCustomUserClaims(firebaseUid, { role });
+      } catch (firebaseError: any) {
+        console.error('Firebase user creation failed:', firebaseError.message);
+        
+        // Check if it's because user already exists in Firebase
+        if (firebaseError.code === 'auth/email-already-exists') {
+          return NextResponse.json(
+            { error: 'User with this email already exists in Firebase' },
+            { status: 409 }
+          );
+        }
+        // Continue with database-only creation for other errors
       }
+    } else {
+      console.log('Firebase Admin not available, creating user in database only');
     }
 
     // Create user in database

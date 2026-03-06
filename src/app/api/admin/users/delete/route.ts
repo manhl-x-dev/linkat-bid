@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Delete from Firebase Auth if exists
-        if (user.firebaseUid) {
+        // Delete from Firebase Auth if available and user has firebaseUid
+        if (adminAuth && user.firebaseUid) {
           try {
             await adminAuth.deleteUser(user.firebaseUid);
           } catch (firebaseError: any) {
