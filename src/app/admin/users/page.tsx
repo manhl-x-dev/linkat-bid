@@ -16,14 +16,18 @@ import {
   Wallet,
   Link2,
   TrendingUp,
-  X,
   Check,
-  Loader2
+  Loader2,
+  Send,
+  X,
+  ArrowDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -121,7 +125,13 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState(initialUsers);
   const [selectedUser, setSelectedUser] = useState<typeof initialUsers[0] | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
 
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -162,19 +172,50 @@ export default function AdminUsersPage() {
   };
 
   const handleEdit = (user: typeof initialUsers[0]) => {
-    toast.success(language === 'ar' ? `تعديل بيانات ${user.name}` : `Edit ${user.name}'s profile`);
+    setSelectedUser(user);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setShowEdit(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedUser) return;
+    setActionLoading(selectedUser.id);
+    await new Promise(r => setTimeout(r, 500));
+    setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, name: editName, email: editEmail } : u));
+    toast.success(language === 'ar' ? 'تم تحديث البيانات بنجاح' : 'Profile updated successfully');
+    setShowEdit(false);
+    setActionLoading(null);
   };
 
   const handleSendEmail = (user: typeof initialUsers[0]) => {
-    toast.success(language === 'ar' ? `تم إرسال رسالة إلى ${user.email}` : `Email sent to ${user.email}`);
+    setSelectedUser(user);
+    setEmailSubject('');
+    setEmailBody('');
+    setShowEmail(true);
+  };
+
+  const handleSendEmailSubmit = async () => {
+    if (!selectedUser || !emailSubject || !emailBody) {
+      toast.error(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
+      return;
+    }
+    setActionLoading(selectedUser.id);
+    await new Promise(r => setTimeout(r, 800));
+    toast.success(language === 'ar' ? `تم إرسال الرسالة إلى ${selectedUser.email}` : `Email sent to ${selectedUser.email}`);
+    setShowEmail(false);
+    setActionLoading(null);
   };
 
   const handleUpgradeVIP = async (user: typeof initialUsers[0]) => {
     setActionLoading(user.id);
-    // Simulate API call
     await new Promise(r => setTimeout(r, 800));
-    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: 'vip' } : u));
-    toast.success(language === 'ar' ? `تم ترقية ${user.name} إلى VIP` : `${user.name} upgraded to VIP`);
+    const newRole = user.role === 'vip' ? 'user' : 'vip';
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u));
+    toast.success(language === 'ar' 
+      ? newRole === 'vip' ? `تم ترقية ${user.name} إلى VIP` : `تم إلغاء VIP من ${user.name}`
+      : newRole === 'vip' ? `${user.name} upgraded to VIP` : `${user.name} downgraded from VIP`
+    );
     setActionLoading(null);
   };
 
@@ -193,10 +234,18 @@ export default function AdminUsersPage() {
   const handleBan = async (user: typeof initialUsers[0]) => {
     setActionLoading(user.id);
     await new Promise(r => setTimeout(r, 800));
-    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: 'banned' } : u));
-    toast.error(language === 'ar' ? `تم حظر ${user.name}` : `${user.name} has been banned`);
+    const newStatus = user.status === 'banned' ? 'active' : 'banned';
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
+    if (newStatus === 'banned') {
+      toast.error(language === 'ar' ? `تم حظر ${user.name}` : `${user.name} has been banned`);
+    } else {
+      toast.success(language === 'ar' ? `تم فك الحظر عن ${user.name}` : `${user.name} has been unbanned`);
+    }
     setActionLoading(null);
   };
+
+  // Update selected user when users change
+  const currentUser = selectedUser ? users.find(u => u.id === selectedUser.id) : null;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -283,30 +332,45 @@ export default function AdminUsersPage() {
                             {language === 'ar' ? 'إرسال رسالة' : 'Send Email'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {u.role !== 'vip' && u.role !== 'admin' && (
-                            <DropdownMenuItem onClick={() => handleUpgradeVIP(u)} className="text-amber-600">
-                              <Crown className="w-4 h-4 mr-2" />
-                              {language === 'ar' ? 'ترقية لـ VIP' : 'Upgrade to VIP'}
+                          {u.role !== 'admin' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleUpgradeVIP(u)} 
+                              className={u.role === 'vip' ? 'text-muted-foreground' : 'text-amber-600'}
+                            >
+                              {u.role === 'vip' ? (
+                                <>
+                                  <ArrowDown className="w-4 h-4 mr-2" />
+                                  {language === 'ar' ? 'إلغاء VIP' : 'Downgrade from VIP'}
+                                </>
+                              ) : (
+                                <>
+                                  <Crown className="w-4 h-4 mr-2" />
+                                  {language === 'ar' ? 'ترقية لـ VIP' : 'Upgrade to VIP'}
+                                </>
+                              )}
                             </DropdownMenuItem>
                           )}
-                          {u.status !== 'banned' && (
-                            <>
-                              {u.status === 'active' ? (
-                                <DropdownMenuItem onClick={() => handleSuspend(u)} className="text-amber-600">
-                                  <Shield className="w-4 h-4 mr-2" />
-                                  {language === 'ar' ? 'تعليق' : 'Suspend'}
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem onClick={() => handleSuspend(u)} className="text-emerald-600">
-                                  <Check className="w-4 h-4 mr-2" />
-                                  {language === 'ar' ? 'تفعيل' : 'Activate'}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem onClick={() => handleBan(u)} className="text-red-600">
-                                <Ban className="w-4 h-4 mr-2" />
-                                {language === 'ar' ? 'حظر' : 'Ban'}
-                              </DropdownMenuItem>
-                            </>
+                          {u.status === 'active' ? (
+                            <DropdownMenuItem onClick={() => handleSuspend(u)} className="text-amber-600">
+                              <Shield className="w-4 h-4 mr-2" />
+                              {language === 'ar' ? 'تعليق' : 'Suspend'}
+                            </DropdownMenuItem>
+                          ) : u.status === 'suspended' ? (
+                            <DropdownMenuItem onClick={() => handleSuspend(u)} className="text-emerald-600">
+                              <Check className="w-4 h-4 mr-2" />
+                              {language === 'ar' ? 'تفعيل' : 'Activate'}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {u.status === 'banned' ? (
+                            <DropdownMenuItem onClick={() => handleBan(u)} className="text-emerald-600">
+                              <Check className="w-4 h-4 mr-2" />
+                              {language === 'ar' ? 'فك الحظر' : 'Unban'}
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleBan(u)} className="text-red-600">
+                              <Ban className="w-4 h-4 mr-2" />
+                              {language === 'ar' ? 'حظر' : 'Ban'}
+                            </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -319,97 +383,89 @@ export default function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      {/* User Profile Modal */}
+      {/* User Profile Modal - Smaller */}
       <Dialog open={showProfile} onOpenChange={setShowProfile}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <User className="w-4 h-4" />
               {language === 'ar' ? 'الملف الشخصي' : 'User Profile'}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedUser && (
-            <div className="space-y-6">
+          {currentUser && (
+            <div className="space-y-4">
               {/* User Header */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-2xl font-bold">
-                  {selectedUser.name[0]}
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-lg font-bold">
+                  {currentUser.name[0]}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold">{selectedUser.name}</h3>
-                  <p className="text-muted-foreground">{selectedUser.email}</p>
-                  <div className="flex gap-2 mt-1">
-                    {getRoleBadge(selectedUser.role)}
-                    {getStatusBadge(selectedUser.status)}
+                  <h3 className="font-bold">{currentUser.name}</h3>
+                  <p className="text-xs text-muted-foreground">{currentUser.email}</p>
+                  <div className="flex gap-1 mt-1">
+                    {getRoleBadge(currentUser.role)}
+                    {getStatusBadge(currentUser.status)}
                   </div>
                 </div>
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Wallet className="w-4 h-4" />
-                      <span className="text-sm">{language === 'ar' ? 'الرصيد' : 'Balance'}</span>
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                      <Wallet className="w-3 h-3" />
+                      <span className="text-xs">{language === 'ar' ? 'الرصيد' : 'Balance'}</span>
                     </div>
-                    <p className="text-xl font-bold">${selectedUser.balance.toFixed(2)}</p>
+                    <p className="font-bold">${currentUser.balance.toFixed(2)}</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <TrendingUp className="w-4 h-4" />
-                      <span className="text-sm">{language === 'ar' ? 'أرباح الإحالة' : 'Referral Earnings'}</span>
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                      <TrendingUp className="w-3 h-3" />
+                      <span className="text-xs">{language === 'ar' ? 'الإحالات' : 'Referrals'}</span>
                     </div>
-                    <p className="text-xl font-bold">${selectedUser.referralBalance.toFixed(2)}</p>
+                    <p className="font-bold">${currentUser.referralBalance.toFixed(2)}</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Link2 className="w-4 h-4" />
-                      <span className="text-sm">{language === 'ar' ? 'الروابط' : 'Links'}</span>
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                      <Link2 className="w-3 h-3" />
+                      <span className="text-xs">{language === 'ar' ? 'الروابط' : 'Links'}</span>
                     </div>
-                    <p className="text-xl font-bold">{selectedUser.links}</p>
+                    <p className="font-bold">{currentUser.links}</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Eye className="w-4 h-4" />
-                      <span className="text-sm">{language === 'ar' ? 'المشاهدات' : 'Views'}</span>
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                      <Eye className="w-3 h-3" />
+                      <span className="text-xs">{language === 'ar' ? 'المشاهدات' : 'Views'}</span>
                     </div>
-                    <p className="text-xl font-bold">{selectedUser.totalViews.toLocaleString()}</p>
+                    <p className="font-bold">{currentUser.totalViews.toLocaleString()}</p>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Details */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center py-1.5 border-b">
                   <span className="text-muted-foreground">{language === 'ar' ? 'كود الإحالة' : 'Referral Code'}</span>
-                  <code className="bg-muted px-2 py-1 rounded">{selectedUser.referralCode}</code>
+                  <code className="bg-muted px-2 py-0.5 rounded text-xs">{currentUser.referralCode}</code>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-muted-foreground">{language === 'ar' ? 'عدد الإحالات' : 'Referrals'}</span>
-                  <span className="font-medium">{selectedUser.referrals}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
+                <div className="flex justify-between items-center py-1.5 border-b">
                   <span className="text-muted-foreground">{language === 'ar' ? 'إجمالي الأرباح' : 'Total Earnings'}</span>
-                  <span className="font-medium">${selectedUser.totalEarnings.toFixed(2)}</span>
+                  <span className="font-medium">${currentUser.totalEarnings.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-muted-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {language === 'ar' ? 'تاريخ التسجيل' : 'Joined'}
+                <div className="flex justify-between items-center py-1.5 border-b">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {language === 'ar' ? 'التسجيل' : 'Joined'}
                   </span>
-                  <span className="font-medium">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-muted-foreground">{language === 'ar' ? 'آخر نشاط' : 'Last Active'}</span>
-                  <span className="font-medium">{new Date(selectedUser.lastActive).toLocaleDateString()}</span>
+                  <span className="font-medium">{new Date(currentUser.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
 
@@ -417,15 +473,23 @@ export default function AdminUsersPage() {
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 
+                  size="sm"
                   className="flex-1"
-                  onClick={() => handleSendEmail(selectedUser)}
+                  onClick={() => {
+                    setShowProfile(false);
+                    handleSendEmail(currentUser);
+                  }}
                 >
                   <Mail className="w-4 h-4 mr-2" />
-                  {language === 'ar' ? 'إرسال رسالة' : 'Send Email'}
+                  {language === 'ar' ? 'رسالة' : 'Email'}
                 </Button>
                 <Button 
+                  size="sm"
                   className="flex-1 bg-emerald-500 hover:bg-emerald-600"
-                  onClick={() => handleEdit(selectedUser)}
+                  onClick={() => {
+                    setShowProfile(false);
+                    handleEdit(currentUser);
+                  }}
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   {language === 'ar' ? 'تعديل' : 'Edit'}
@@ -433,6 +497,123 @@ export default function AdminUsersPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Modal */}
+      <Dialog open={showEdit} onOpenChange={setShowEdit}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-4 h-4" />
+              {language === 'ar' ? 'تعديل المستخدم' : 'Edit User'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>{language === 'ar' ? 'الاسم' : 'Name'}</Label>
+              <Input 
+                value={editName} 
+                onChange={(e) => setEditName(e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'البريد الإلكتروني' : 'Email'}</Label>
+              <Input 
+                type="email"
+                value={editEmail} 
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowEdit(false)}
+              >
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button 
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+                onClick={handleSaveEdit}
+                disabled={actionLoading === selectedUser?.id}
+              >
+                {actionLoading === selectedUser?.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  language === 'ar' ? 'حفظ' : 'Save'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Email Modal */}
+      <Dialog open={showEmail} onOpenChange={setShowEmail}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              {language === 'ar' ? 'إرسال رسالة' : 'Send Email'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>{language === 'ar' ? 'إلى' : 'To'}</Label>
+              <Input 
+                value={selectedUser?.email || ''} 
+                disabled
+                className="mt-1.5 bg-muted"
+              />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'الموضوع' : 'Subject'}</Label>
+              <Input 
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder={language === 'ar' ? 'موضوع الرسالة...' : 'Email subject...'}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'الرسالة' : 'Message'}</Label>
+              <Textarea 
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                placeholder={language === 'ar' ? 'محتوى الرسالة...' : 'Email content...'}
+                className="mt-1.5"
+                rows={4}
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowEmail(false)}
+              >
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button 
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+                onClick={handleSendEmailSubmit}
+                disabled={actionLoading === selectedUser?.id || !emailSubject || !emailBody}
+              >
+                {actionLoading === selectedUser?.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    {language === 'ar' ? 'إرسال' : 'Send'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
