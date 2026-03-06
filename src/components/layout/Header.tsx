@@ -15,8 +15,11 @@ import {
   Globe,
   Crown,
   Sun,
-  Moon
+  Moon,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -41,6 +44,8 @@ const languages = [
 export function Header() {
   const { user, isAuthenticated, logout, language, setLanguage, theme, setTheme } = useAppStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Apply theme to document
   useEffect(() => {
@@ -61,6 +66,12 @@ export function Header() {
   };
 
   const isDark = theme === 'dark';
+  const isArabic = language === 'ar';
+  const isHomePage = pathname === '/';
+
+  const handleBack = () => {
+    router.back();
+  };
 
   const handleLogout = async () => {
     logout();
@@ -75,7 +86,27 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <>
+      {/* Back Button - Fixed at top corner */}
+      {!isHomePage && (
+        <button
+          onClick={handleBack}
+          className={cn(
+            "fixed top-20 z-50 p-2 rounded-full bg-background/95 backdrop-blur shadow-md border",
+            "hover:bg-accent hover:text-accent-foreground transition-colors",
+            isArabic ? "right-4" : "left-4"
+          )}
+          title={isArabic ? 'الرجوع للصفحة السابقة' : 'Go back to previous page'}
+        >
+          {isArabic ? (
+            <ArrowRight className="w-5 h-5" />
+          ) : (
+            <ArrowLeft className="w-5 h-5" />
+          )}
+        </button>
+      )}
+
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
@@ -287,5 +318,6 @@ export function Header() {
         </div>
       )}
     </header>
+    </>
   );
 }
