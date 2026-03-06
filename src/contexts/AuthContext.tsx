@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/lib/store';
 
 interface AuthContextType {
   user: User | null;
@@ -33,15 +34,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { setUser: setAppUser, clearUser } = useAppStore();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
       setLoading(false);
+      
+      if (firebaseUser) {
+        // Sync with backend and get user role
+        await syncUserWithBackend(firebaseUser);
+      } else {
+        clearUser();
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [clearUser]);
 
   const signInWithGoogle = async () => {
     try {
@@ -105,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      clearUser();
       router.push('/');
     } catch (err: unknown) {
       setError('Failed to sign out');
@@ -123,12 +133,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearError = () => setError(null);
 
-  // Sync Firebase user with our backend
+  // Sync Firebase user with our backend and update app store
   const syncUserWithBackend = async (firebaseUser: User, displayName?: string) => {
     try {
       const token = await firebaseUser.getIdToken();
       
-      await fetch('/api/auth/sync', {
+      const response = await fetch('/api/auth/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,6 +151,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: firebaseUser.uid,
         }),
       });
+      
+      const data = await response.json();
+      
+      if (data.user) {
+        // Update app store with user data including role
+        setAppUser({
+          id: data.user.id || firebaseUser.uid,
+          email: data.user.email || firebaseUser.email || '',
+          name: data.user.name || displayName || firebaseUser.displayName || 'User',
+          role: data.user.role || 'user',
+          balance: data.user.balance || 0,
+          referralBalance: data.user.referralBalance || 0,
+          referralCode: data.user.referralCode || '',
+          isVip: data.user.role === 'vip',
+        });
+      }
     } catch (err) {
       console.error('Failed to sync user with backend:', err);
     }
