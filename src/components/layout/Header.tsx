@@ -94,7 +94,7 @@ export function Header() {
           className={cn(
             "fixed top-20 z-50 p-2 rounded-full bg-background/95 backdrop-blur shadow-md border",
             "hover:bg-accent hover:text-accent-foreground transition-colors",
-            isArabic ? "right-4" : "left-4"
+            isArabic ? "right-20" : "left-4"
           )}
           title={isArabic ? 'الرجوع للصفحة السابقة' : 'Go back to previous page'}
         >
