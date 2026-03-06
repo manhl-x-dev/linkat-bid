@@ -1,0 +1,11 @@
+{
+  "buildCommand": "bun run db:generate && next build",
+  "installCommand": "bun install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/**/*": {
+      "maxDuration": 30
+    }
+  }
+}
