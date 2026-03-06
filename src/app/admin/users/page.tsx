@@ -266,31 +266,57 @@ export default function AdminUsersPage() {
       return;
     }
     setActionLoading('new');
-    await new Promise(r => setTimeout(r, 800));
-    const newUser = {
-      id: Date.now().toString(),
-      name: newName,
-      email: newEmail,
-      role: newRole,
-      status: 'active' as const,
-      balance: 0,
-      referralBalance: 0,
-      links: 0,
-      totalViews: 0,
-      totalEarnings: 0,
-      referralCode: `${newName.toUpperCase().slice(0, 6)}${Date.now().toString().slice(-4)}`,
-      referrals: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      lastActive: new Date().toISOString().split('T')[0]
-    };
-    setUsers(prev => [...prev, newUser]);
-    toast.success(language === 'ar' ? `تم إضافة المستخدم ${newName} بنجاح` : `User ${newName} added successfully`);
-    setShowAddUser(false);
-    setNewName('');
-    setNewEmail('');
-    setNewPassword('');
-    setNewRole('user');
-    setActionLoading(null);
+    
+    try {
+      const res = await fetch('/api/admin/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName,
+          email: newEmail,
+          password: newPassword,
+          role: newRole
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        toast.error(data.error || (language === 'ar' ? 'حدث خطأ' : 'An error occurred'));
+        setActionLoading(null);
+        return;
+      }
+      
+      // Add the new user to the local state
+      const newUser = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        status: data.user.status,
+        balance: 0,
+        referralBalance: 0,
+        links: 0,
+        totalViews: 0,
+        totalEarnings: 0,
+        referralCode: data.user.referralCode,
+        referrals: 0,
+        createdAt: new Date().toISOString().split('T')[0],
+        lastActive: new Date().toISOString().split('T')[0]
+      };
+      
+      setUsers(prev => [...prev, newUser]);
+      toast.success(language === 'ar' ? `تم إضافة المستخدم ${newName} بنجاح في Firebase Auth وقاعدة البيانات` : `User ${newName} added to Firebase Auth and Database`);
+      setShowAddUser(false);
+      setNewName('');
+      setNewEmail('');
+      setNewPassword('');
+      setNewRole('user');
+    } catch (error) {
+      toast.error(language === 'ar' ? 'حدث خطأ في الاتصال' : 'Connection error');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleCloseAddUser = () => {
@@ -329,15 +355,44 @@ export default function AdminUsersPage() {
       return;
     }
     setDeleteLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    setUsers(prev => prev.filter(u => !selectedForDelete.includes(u.id)));
-    toast.success(language === 'ar' 
-      ? `تم حذف ${selectedForDelete.length} مستخدم` 
-      : `${selectedForDelete.length} users deleted`
-    );
-    setSelectedForDelete([]);
-    setDeleteMode(false);
-    setDeleteLoading(false);
+    
+    try {
+      const res = await fetch('/api/admin/users/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: selectedForDelete })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        toast.error(data.error || (language === 'ar' ? 'حدث خطأ' : 'An error occurred'));
+        setDeleteLoading(false);
+        return;
+      }
+      
+      // Remove deleted users from local state
+      setUsers(prev => prev.filter(u => !selectedForDelete.includes(u.id)));
+      
+      if (data.failed > 0) {
+        toast.warning(language === 'ar' 
+          ? `تم حذف ${data.deleted} مستخدم، فشل حذف ${data.failed}` 
+          : `${data.deleted} users deleted, ${data.failed} failed`
+        );
+      } else {
+        toast.success(language === 'ar' 
+          ? `تم حذف ${data.deleted} مستخدم من Firebase Auth وقاعدة البيانات` 
+          : `${data.deleted} users deleted from Firebase Auth and Database`
+        );
+      }
+      
+      setSelectedForDelete([]);
+      setDeleteMode(false);
+    } catch (error) {
+      toast.error(language === 'ar' ? 'حدث خطأ في الاتصال' : 'Connection error');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleCancelDelete = () => {
