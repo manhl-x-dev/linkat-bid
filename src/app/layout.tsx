@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,24 +15,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "linkat.bid - اختصار روابط ذكي مع أرباح حقيقية",
+  description: "منصة اختصار الروابط بالعملات الرقمية. اكسب 50% من أرباح الإعلانات + 20% من نظام الإحالة. دفعات فورية بالـ USDT.",
+  keywords: ["اختصار روابط", "ربح المال", "USDT", "عملات رقمية", "linkat.bid", "URL shortener"],
+  authors: [{ name: "Manhl_X" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/favicon.ico",
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "linkat.bid - Smart URL Shortener",
+    description: "Smart URL shortening with real earnings. Get 50% ad revenue + 20% referral commission.",
+    url: "https://linkat.bid",
+    siteName: "linkat.bid",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "linkat.bid - Smart URL Shortener",
+    description: "Smart URL shortening with real earnings. Get 50% ad revenue + 20% referral commission.",
   },
 };
 
@@ -41,11 +42,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Toaster />
       </body>
     </html>

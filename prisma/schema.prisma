@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file for linkat.bid
+// Platform for shortening links with cryptocurrency payments
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +10,314 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== User Management ====================
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  image         String?
+  firebaseUid   String?   @unique // Firebase Authentication UID
+  role          String    @default("user") // user, vip, admin
+  status        String    @default("active") // active, suspended, banned
+  balance       Float     @default(0)
+  referralBalance Float   @default(0)
+  referralCode  String    @unique
+  referredBy    String?
+  referredByUser User?    @relation("Referrals", fields: [referredBy], references: [id])
+  referrals     User[]    @relation("Referrals")
+  vipExpiresAt  DateTime?
+  
+  // Wallet info
+  walletAddress String?
+  walletNetwork String? // TRC20, BEP20
+  
+  // Stats
+  totalLinks    Int       @default(0)
+  totalClicks   Int       @default(0)
+  totalEarnings Float     @default(0)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  links         ShortLink[]
+  withdrawals   Withdrawal[]
+  transactions  Transaction[]
+  reports       Report[]
+  activities    ActivityLog[]
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ==================== Short Links ====================
+
+model ShortLink {
+  id            String    @id @default(cuid())
+  shortCode     String    @unique
+  originalCode  String    // Original code without symbol
+  symbol        String?   // Smart processing symbol: !@#$%^&*
+  targetUrl     String
+  title         String?
+  description   String?
+  
+  // Owner
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  // Stats
+  clicks        Int       @default(0)
+  uniqueClicks  Int       @default(0)
+  earnings      Float     @default(0)
+  
+  // Status
+  status        String    @default("active") // active, paused, deleted
+  isPublic      Boolean   @default(true)
+  
+  // Ad settings
+  showAds       Boolean   @default(true)
+  adSkipTime    Int       @default(5) // seconds
+  
+  // Smart processing
+  isReserved    Boolean   @default(false) // Reserved word processed
+  isCmsConflict Boolean   @default(false) // CMS page conflict
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  expiresAt     DateTime?
+  
+  // Relations
+  analytics     LinkAnalytics[]
+}
+
+model LinkAnalytics {
+  id            String    @id @default(cuid())
+  linkId        String
+  link          ShortLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  
+  // Visitor info
+  ipAddress     String?
+  userAgent     String?
+  country       String?
+  city          String?
+  device        String? // mobile, desktop, tablet
+  browser       String?
+  os            String?
+  referer       String?
+  
+  createdAt     DateTime  @default(now())
+}
+
+// ==================== Financial System ====================
+
+model Withdrawal {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  amount        Float
+  fee           Float      @default(0)
+  netAmount     Float
+  
+  walletAddress String
+  walletNetwork String // TRC20, BEP20
+  txHash        String?
+  
+  status        String    @default("pending") // pending, processing, completed, rejected
+  
+  createdAt     DateTime  @default(now())
+  processedAt   DateTime?
+  
+  notes         String?
+}
+
+model Transaction {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  type          String    // earning, referral, withdrawal, bonus
+  amount        Float
+  balance       Float     // Balance after transaction
+  
+  description   String?
+  referenceId   String?   // Related link or withdrawal ID
+  
+  createdAt     DateTime  @default(now())
+}
+
+// ==================== CMS System ====================
+
+model CmsPage {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  titleEn       String?
+  titleFr       String?
+  titleEs       String?
+  titleIt       String?
+  titleZh       String?
+  
+  content       String    // HTML content
+  contentEn     String?
+  contentFr     String?
+  contentEs     String?
+  contentIt     String?
+  contentZh     String?
+  
+  excerpt       String?
+  featuredImage String?
+  
+  isPublished   Boolean   @default(true)
+  showInMenu    Boolean   @default(false)
+  menuOrder     Int       @default(0)
+  
+  // SEO
+  metaTitle     String?
+  metaDesc      String?
+  
+  // Type
+  type          String    @default("page") // page, blog, landing
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  publishedAt   DateTime?
+  authorId      String?
+}
+
+model BlogPost {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  titleEn       String?
+  content       String
+  contentEn     String?
+  excerpt       String?
+  featuredImage String?
+  
+  category      String?
+  tags          String?   // JSON array
+  
+  isPublished   Boolean   @default(false)
+  views         Int       @default(0)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  publishedAt   DateTime?
+  authorId      String?
+}
+
+// ==================== System Configuration ====================
+
+model SiteSetting {
+  id            String    @id @default(cuid())
+  key          String    @unique
+  value        String
+  type         String    @default("text") // text, json, image
+  
+  updatedAt    DateTime  @updatedAt
+}
+
+model ReservedWord {
+  id            String    @id @default(cuid())
+  word          String    @unique
+  reason        String?   // system, cms, admin
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+}
+
+model SmartSymbol {
+  id            String    @id @default(cuid())
+  symbol        String    @unique
+  priority      Int       @default(0)
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+}
+
+// ==================== Reports & Moderation ====================
+
+model Report {
+  id            String    @id @default(cuid())
+  linkId        String?
+  reportedBy    String
+  reporter      User      @relation(fields: [reportedBy], references: [id])
+  
+  reason        String
+  description   String?
+  status        String    @default("pending") // pending, reviewed, resolved, dismissed
+  
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  action        String?   // warning, suspended, banned, dismissed
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ActivityLog {
+  id            String    @id @default(cuid())
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id])
+  
+  action        String
+  details       String?   // JSON
+  ipAddress     String?
+  userAgent     String?
+  
+  createdAt     DateTime  @default(now())
+}
+
+// ==================== Email System ====================
+
+model EmailTemplate {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  subject       String
+  subjectEn     String?
+  body          String    // HTML
+  bodyEn        String?
+  
+  variables     String?   // JSON array of available variables
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model EmailLog {
+  id            String    @id @default(cuid())
+  to            String
+  subject       String
+  template      String?
+  status        String    @default("pending") // pending, sent, failed
+  
+  error         String?
+  
+  createdAt     DateTime  @default(now())
+  sentAt        DateTime?
+}
+
+// ==================== Advertisements ====================
+
+model Advertisement {
+  id            String    @id @default(cuid())
+  name          String
+  type          String    // banner, interstitial, popup
+  content       String    // HTML/JS
+  image         String?
+  link          String?
+  
+  placement     String    // header, footer, between, popup
+  
+  impressions   Int       @default(0)
+  clicks        Int       @default(0)
+  
+  isActive      Boolean   @default(true)
+  priority      Int       @default(0)
+  
+  startDate     DateTime?
+  endDate       DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }

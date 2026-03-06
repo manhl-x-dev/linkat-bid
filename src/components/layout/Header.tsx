@@ -1,0 +1,233 @@
+'use client';
+
+import Link from 'next/link';
+import { useState } from 'react';
+import { useAppStore } from '@/lib/store';
+import { 
+  Link2, 
+  Menu, 
+  X, 
+  User, 
+  LogOut, 
+  Wallet, 
+  Settings,
+  ChevronDown,
+  Globe,
+  Crown
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+const languages = [
+  { code: 'ar', name: 'العربية' },
+  { code: 'en', name: 'English' },
+  { code: 'fr', name: 'Français' },
+  { code: 'es', name: 'Español' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'zh', name: '中文' },
+];
+
+export function Header() {
+  const { user, isAuthenticated, logout, language, setLanguage } = useAppStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    logout();
+  };
+
+  const navLinks = [
+    { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
+    { href: '/#features', label: language === 'ar' ? 'المميزات' : 'Features' },
+    { href: '/#pricing', label: language === 'ar' ? 'الأسعار' : 'Pricing' },
+    { href: '/faq', label: language === 'ar' ? 'الأسئلة الشائعة' : 'FAQ' },
+    { href: '/contact', label: language === 'ar' ? 'تواصل معنا' : 'Contact' },
+  ];
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between px-4">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <Link2 className="w-5 h-5 text-white" />
+          </div>
+          <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            linkat.bid
+          </span>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right Section */}
+        <div className="flex items-center gap-3">
+          {/* Language Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="hidden sm:flex">
+                <Globe className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {languages.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code as any)}
+                  className={cn(language === lang.code && 'bg-accent')}
+                >
+                  {lang.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {isAuthenticated && user ? (
+            <>
+              {/* Balance Badge */}
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-sm font-medium">
+                <Wallet className="w-4 h-4" />
+                <span>${user.balance.toFixed(2)}</span>
+              </div>
+
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-medium">
+                      {user.name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <span className="hidden sm:inline font-medium">{user.name}</span>
+                    {user.isVip && (
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                        <Crown className="w-3 h-3 mr-1" />
+                        VIP
+                      </Badge>
+                    )}
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span>{user.name}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/links" className="flex items-center gap-2">
+                      <Link2 className="w-4 h-4" />
+                      {language === 'ar' ? 'روابطي' : 'My Links'}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/wallet" className="flex items-center gap-2">
+                      <Wallet className="w-4 h-4" />
+                      {language === 'ar' ? 'المحفظة' : 'Wallet'}
+                    </Link>
+                  </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex items-center gap-2">
+                          <Settings className="w-4 h-4" />
+                          {language === 'ar' ? 'إدارة الموقع' : 'Admin Panel'}
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                <Link href="/login">
+                  {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                </Link>
+              </Button>
+              <Button asChild className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
+                <Link href="/register">
+                  {language === 'ar' ? 'إنشاء حساب' : 'Sign Up'}
+                </Link>
+              </Button>
+            </div>
+          )}
+
+          {/* Mobile Menu Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-background">
+          <nav className="container px-4 py-4 flex flex-col gap-2">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium py-2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="border-t mt-2 pt-2">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code as any)}
+                  className={cn(
+                    "block w-full text-left py-2 text-sm",
+                    language === lang.code && "text-emerald-600 font-medium"
+                  )}
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}
