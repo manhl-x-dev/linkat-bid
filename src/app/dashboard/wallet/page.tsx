@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store';
 import { 
@@ -8,16 +8,11 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Gift,
-  Clock,
-  Copy
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { Sidebar } from '@/components/layout/Sidebar';
 
 interface Transaction {
   id: string;
@@ -28,22 +23,17 @@ interface Transaction {
   createdAt: string;
 }
 
-export default function WalletPage() {
-  const { user, isAuthenticated, language } = useAppStore();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+// Initial transactions data
+const initialTransactions: Transaction[] = [
+  { id: '1', type: 'earning', amount: 0.05, balance: 1.25, description: 'أرباح من link abc123', createdAt: new Date().toISOString() },
+  { id: '2', type: 'referral', amount: 0.02, balance: 1.20, description: 'عمولة إحالة', createdAt: new Date(Date.now() - 86400000).toISOString() },
+  { id: '3', type: 'withdrawal', amount: -5.00, balance: 1.18, description: 'سحب إلى USDT TRC20', createdAt: new Date(Date.now() - 172800000).toISOString() },
+  { id: '4', type: 'earning', amount: 0.08, balance: 6.18, description: 'أرباح من link xyz789', createdAt: new Date(Date.now() - 259200000).toISOString() },
+];
 
-  useEffect(() => {
-    setTimeout(() => {
-      setTransactions([
-        { id: '1', type: 'earning', amount: 0.05, balance: 1.25, description: 'أرباح من link abc123', createdAt: new Date().toISOString() },
-        { id: '2', type: 'referral', amount: 0.02, balance: 1.20, description: 'عمولة إحالة', createdAt: new Date(Date.now() - 86400000).toISOString() },
-        { id: '3', type: 'withdrawal', amount: -5.00, balance: 1.18, description: 'سحب إلى USDT TRC20', createdAt: new Date(Date.now() - 172800000).toISOString() },
-        { id: '4', type: 'earning', amount: 0.08, balance: 6.18, description: 'أرباح من link xyz789', createdAt: new Date(Date.now() - 259200000).toISOString() },
-      ]);
-      setLoading(false);
-    }, 500);
-  }, []);
+export default function WalletPage() {
+  const { user, language } = useAppStore();
+  const [transactions] = useState<Transaction[]>(initialTransactions);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -65,151 +55,131 @@ export default function WalletPage() {
     return labels[type]?.[language === 'ar' ? 'ar' : 'en'] || type;
   };
 
-  if (!isAuthenticated) return null;
-
-  const userType = user?.isVip ? 'vip' : user?.role === 'admin' ? 'admin' : 'user';
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <div className="flex-1 flex">
-        <Sidebar type={userType as any} />
-        
-        <main className="flex-1 mr-0 md:mr-64 p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-1">
-                {language === 'ar' ? 'المحفظة الرقمية' : 'Digital Wallet'}
-              </h1>
-              <p className="text-muted-foreground">
-                {language === 'ar' ? 'إدارة أرباحك ورصيدك' : 'Manage your earnings and balance'}
-              </p>
-            </div>
-
-            {/* Balance Cards */}
-            <div className="grid sm:grid-cols-2 gap-4 mb-6">
-              <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950 dark:to-card">
-                <CardHeader>
-                  <CardDescription>{language === 'ar' ? 'رصيد الأرباح' : 'Earnings Balance'}</CardDescription>
-                  <CardTitle className="text-3xl text-emerald-600">
-                    ${user?.balance.toFixed(2) || '0.00'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button asChild className="w-full bg-emerald-500 hover:bg-emerald-600">
-                    <Link href="/dashboard/withdraw">
-                      <ArrowUpRight className="w-4 h-4 mr-2" />
-                      {language === 'ar' ? 'سحب الأرباح' : 'Withdraw'}
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-white dark:from-amber-950 dark:to-card">
-                <CardHeader>
-                  <CardDescription>{language === 'ar' ? 'رصيد الإحالة' : 'Referral Balance'}</CardDescription>
-                  <CardTitle className="text-3xl text-amber-600">
-                    ${user?.referralBalance.toFixed(2) || '0.00'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Gift className="w-4 h-4" />
-                    <span>
-                      {language === 'ar' ? '20% من أرباح المسجلين برابطك' : '20% from referred users'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-base">{language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
-                    <Link href="/dashboard/withdraw">
-                      <ArrowUpRight className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'سحب' : 'Withdraw'}</span>
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
-                    <Link href="/dashboard/referral">
-                      <Gift className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'الإحالة' : 'Referral'}</span>
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
-                    <Link href="/dashboard/history">
-                      <Clock className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'السجل' : 'History'}</span>
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
-                    <Link href="/dashboard/payment-methods">
-                      <Wallet className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'طرق الدفع' : 'Payments'}</span>
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Transactions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{language === 'ar' ? 'آخر المعاملات' : 'Recent Transactions'}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-                  </div>
-                ) : transactions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {language === 'ar' ? 'لا توجد معاملات بعد' : 'No transactions yet'}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {transactions.map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                            {getTypeIcon(tx.type)}
-                          </div>
-                          <div>
-                            <div className="font-medium text-sm">{tx.description}</div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Badge variant="secondary" className="text-xs">
-                                {getTypeLabel(tx.type)}
-                              </Badge>
-                              <span>{new Date(tx.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-left">
-                          <div className={`font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                            {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            ${tx.balance.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </main>
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-1">
+          {language === 'ar' ? 'المحفظة الرقمية' : 'Digital Wallet'}
+        </h1>
+        <p className="text-muted-foreground">
+          {language === 'ar' ? 'إدارة أرباحك ورصيدك' : 'Manage your earnings and balance'}
+        </p>
       </div>
 
-      <Footer />
+      {/* Balance Cards */}
+      <div className="grid sm:grid-cols-2 gap-4 mb-6">
+        <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950 dark:to-card">
+          <CardHeader>
+            <CardDescription>{language === 'ar' ? 'رصيد الأرباح' : 'Earnings Balance'}</CardDescription>
+            <CardTitle className="text-3xl text-emerald-600">
+              ${user?.balance.toFixed(2) || '0.00'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full bg-emerald-500 hover:bg-emerald-600">
+              <Link href="/dashboard/withdraw">
+                <ArrowUpRight className="w-4 h-4 mr-2" />
+                {language === 'ar' ? 'سحب الأرباح' : 'Withdraw'}
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-white dark:from-amber-950 dark:to-card">
+          <CardHeader>
+            <CardDescription>{language === 'ar' ? 'رصيد الإحالة' : 'Referral Balance'}</CardDescription>
+            <CardTitle className="text-3xl text-amber-600">
+              ${user?.referralBalance.toFixed(2) || '0.00'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Gift className="w-4 h-4" />
+              <span>
+                {language === 'ar' ? '20% من أرباح المسجلين برابطك' : '20% from referred users'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">{language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
+              <Link href="/dashboard/withdraw">
+                <ArrowUpRight className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'سحب' : 'Withdraw'}</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
+              <Link href="/dashboard/referral">
+                <Gift className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'الإحالة' : 'Referral'}</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
+              <Link href="/dashboard/history">
+                <Clock className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'السجل' : 'History'}</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2">
+              <Link href="/dashboard/payment-methods">
+                <Wallet className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'طرق الدفع' : 'Payments'}</span>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transactions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{language === 'ar' ? 'آخر المعاملات' : 'Recent Transactions'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {transactions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {language === 'ar' ? 'لا توجد معاملات بعد' : 'No transactions yet'}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {transactions.map((tx) => (
+                <div key={tx.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      {getTypeIcon(tx.type)}
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{tx.description}</div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="secondary" className="text-xs">
+                          {getTypeLabel(tx.type)}
+                        </Badge>
+                        <span>{new Date(tx.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-left">
+                    <div className={`font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      ${tx.balance.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

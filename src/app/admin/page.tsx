@@ -1,32 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
 import { 
   Users, 
   Link2, 
-  Wallet, 
-  TrendingUp,
+  Wallet,
   AlertTriangle,
   DollarSign,
   Activity,
-  ArrowUpRight,
-  Loader2
+  ArrowUpRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { Sidebar } from '@/components/layout/Sidebar';
 
 export default function AdminDashboard() {
-  const router = useRouter();
-  const { user: firebaseUser, loading: authLoading } = useAuth();
-  const { user, language } = useAppStore();
-  const [stats, setStats] = useState({
+  const { language } = useAppStore();
+  const [stats] = useState({
     totalUsers: 1234,
     totalLinks: 5678,
     totalClicks: 123456,
@@ -37,202 +28,149 @@ export default function AdminDashboard() {
     todayClicks: 1234
   });
 
-  // Redirect if not logged in or not admin
-  useEffect(() => {
-    if (!authLoading && !firebaseUser) {
-      router.push('/login');
-    }
-  }, [authLoading, firebaseUser, router]);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-      </div>
-    );
-  }
-
-  if (!firebaseUser || user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">
-              {language === 'ar' ? 'وصول مرفوض' : 'Access Denied'}
-            </h2>
-            <p className="mb-4 text-muted-foreground">
-              {language === 'ar' 
-                ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' 
-                : 'You do not have permission to access this page'}
-            </p>
-            <p className="text-xs text-muted-foreground mb-4">
-              {language === 'ar' ? 'دورك الحالي:' : 'Your current role:'} {user?.role || 'غير محدد'}
-            </p>
-            <Button onClick={() => router.push('/')} className="w-full">
-              {language === 'ar' ? 'العودة للرئيسية' : 'Go Home'}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const statCards = [
     {
       title: language === 'ar' ? 'المستخدمين' : 'Users',
       value: stats.totalUsers.toLocaleString(),
       change: `+${stats.todaySignups} ${language === 'ar' ? 'اليوم' : 'today'}`,
       icon: Users,
-      color: 'emerald'
+      color: 'text-emerald-500'
     },
     {
       title: language === 'ar' ? 'الروابط' : 'Links',
       value: stats.totalLinks.toLocaleString(),
       change: '+23 ' + (language === 'ar' ? 'جديد' : 'new'),
       icon: Link2,
-      color: 'blue'
+      color: 'text-blue-500'
     },
     {
       title: language === 'ar' ? 'النقرات' : 'Clicks',
       value: stats.totalClicks.toLocaleString(),
       change: `+${stats.todayClicks.toLocaleString()} ${language === 'ar' ? 'اليوم' : 'today'}`,
       icon: Activity,
-      color: 'purple'
+      color: 'text-purple-500'
     },
     {
       title: language === 'ar' ? 'الأرباح' : 'Revenue',
       value: `$${stats.totalEarnings.toFixed(2)}`,
       change: '+$45.23 ' + (language === 'ar' ? 'اليوم' : 'today'),
       icon: DollarSign,
-      color: 'amber'
+      color: 'text-amber-500'
     },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <div className="flex-1 flex">
-        <Sidebar type="admin" />
-        
-        <main className="flex-1 mr-0 md:mr-64 p-6">
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-1">
-                {language === 'ar' ? 'لوحة تحكم المدير' : 'Admin Dashboard'}
-              </h1>
-              <p className="text-muted-foreground">
-                {language === 'ar' ? 'إحصائيات وإدارة الموقع' : 'Site statistics and management'}
-              </p>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {statCards.map((stat, index) => (
-                <Card key={index}>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {stat.title}
-                    </CardTitle>
-                    <stat.icon className={`w-4 h-4 text-${stat.color}-500`} />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <p className="text-xs text-emerald-600">{stat.change}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Alerts */}
-            <div className="grid sm:grid-cols-2 gap-4 mb-6">
-              <Card className="border-amber-200 dark:border-amber-800">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Wallet className="w-5 h-5 text-amber-500" />
-                      {language === 'ar' ? 'طلبات السحب المعلقة' : 'Pending Withdrawals'}
-                    </CardTitle>
-                  </div>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/admin/withdrawals">
-                      {language === 'ar' ? 'عرض' : 'View'}
-                      <ArrowUpRight className="w-4 h-4 mr-1" />
-                    </Link>
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-amber-600">{stats.pendingWithdrawals}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'ar' ? 'بانتظار المعالجة' : 'Awaiting processing'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-red-200 dark:border-red-800">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
-                      {language === 'ar' ? 'البلاغات المعلقة' : 'Pending Reports'}
-                    </CardTitle>
-                  </div>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/admin/reports">
-                      {language === 'ar' ? 'عرض' : 'View'}
-                      <ArrowUpRight className="w-4 h-4 mr-1" />
-                    </Link>
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-red-600">{stats.pendingReports}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'ar' ? 'بانتظار المراجعة' : 'Awaiting review'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                    <Link href="/admin/users">
-                      <Users className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'المستخدمين' : 'Users'}</span>
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                    <Link href="/admin/links">
-                      <Link2 className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'الروابط' : 'Links'}</span>
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                    <Link href="/admin/cms">
-                      <TrendingUp className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'المحتوى' : 'CMS'}</span>
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                    <Link href="/admin/settings">
-                      <Activity className="w-5 h-5" />
-                      <span className="text-xs">{language === 'ar' ? 'الإعدادات' : 'Settings'}</span>
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
+    <div className="max-w-6xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-1">
+          {language === 'ar' ? 'لوحة تحكم المدير' : 'Admin Dashboard'}
+        </h1>
+        <p className="text-muted-foreground">
+          {language === 'ar' ? 'إحصائيات وإدارة الموقع' : 'Site statistics and management'}
+        </p>
       </div>
 
-      <Footer />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {statCards.map((stat, index) => (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className={`w-4 h-4 ${stat.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-emerald-600">{stat.change}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Alerts */}
+      <div className="grid sm:grid-cols-2 gap-4 mb-6">
+        <Card className="border-amber-200 dark:border-amber-800">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-amber-500" />
+                {language === 'ar' ? 'طلبات السحب المعلقة' : 'Pending Withdrawals'}
+              </CardTitle>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/withdrawals">
+                {language === 'ar' ? 'عرض' : 'View'}
+                <ArrowUpRight className="w-4 h-4 mr-1" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-amber-600">{stats.pendingWithdrawals}</div>
+            <p className="text-sm text-muted-foreground">
+              {language === 'ar' ? 'بانتظار المعالجة' : 'Awaiting processing'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-red-200 dark:border-red-800">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                {language === 'ar' ? 'البلاغات المعلقة' : 'Pending Reports'}
+              </CardTitle>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/reports">
+                {language === 'ar' ? 'عرض' : 'View'}
+                <ArrowUpRight className="w-4 h-4 mr-1" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-600">{stats.pendingReports}</div>
+            <p className="text-sm text-muted-foreground">
+              {language === 'ar' ? 'بانتظار المراجعة' : 'Awaiting review'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link href="/admin/users">
+                <Users className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'المستخدمين' : 'Users'}</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link href="/admin/links">
+                <Link2 className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'الروابط' : 'Links'}</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link href="/admin/cms">
+                <Activity className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'المحتوى' : 'CMS'}</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-20 flex-col gap-2">
+              <Link href="/admin/settings">
+                <DollarSign className="w-5 h-5" />
+                <span className="text-xs">{language === 'ar' ? 'الإعدادات' : 'Settings'}</span>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

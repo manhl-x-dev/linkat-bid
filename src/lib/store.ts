@@ -17,6 +17,7 @@ interface AppState {
   isAuthenticated: boolean;
   language: 'ar' | 'en' | 'fr' | 'es' | 'it' | 'zh';
   theme: 'light' | 'dark' | 'system';
+  sidebarCollapsed: boolean;
   
   // Actions
   setUser: (user: User | null) => void;
@@ -24,6 +25,8 @@ interface AppState {
   setLanguage: (lang: 'ar' | 'en' | 'fr' | 'es' | 'it' | 'zh') => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   updateBalance: (balance: number, referralBalance?: number) => void;
+  toggleSidebar: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
 }
 
 // Custom storage that gracefully handles SSR and restricted environments
@@ -61,6 +64,7 @@ export const useAppStore = create<AppState>()(
       isAuthenticated: false,
       language: 'ar',
       theme: 'system',
+      sidebarCollapsed: false,
       
       setUser: (user) => set({ 
         user, 
@@ -82,7 +86,15 @@ export const useAppStore = create<AppState>()(
           balance,
           referralBalance: referralBalance ?? state.user.referralBalance
         } : null
-      }))
+      })),
+
+      toggleSidebar: () => set((state) => ({ 
+        sidebarCollapsed: !state.sidebarCollapsed 
+      })),
+
+      setSidebarCollapsed: (collapsed) => set({ 
+        sidebarCollapsed: collapsed 
+      })
     }),
     {
       name: 'linkat-storage',
@@ -91,7 +103,8 @@ export const useAppStore = create<AppState>()(
         language: state.language,
         theme: state.theme,
         user: state.user,
-        isAuthenticated: state.isAuthenticated
+        isAuthenticated: state.isAuthenticated,
+        sidebarCollapsed: state.sidebarCollapsed
       })
     }
   )

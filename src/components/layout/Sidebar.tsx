@@ -17,16 +17,12 @@ import {
   TrendingUp,
   History,
   CreditCard,
-  Shield,
   Globe,
-  Mail,
-  Palette,
   Database,
   AlertTriangle,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -58,21 +54,17 @@ const adminMenuItems = [
   { href: '/admin/withdrawals', icon: CreditCard, labelAr: 'طلبات السحب', labelEn: 'Withdrawals' },
   { href: '/admin/transactions', icon: History, labelAr: 'المعاملات', labelEn: 'Transactions' },
   { href: '/admin/reports', icon: AlertTriangle, labelAr: 'البلاغات', labelEn: 'Reports' },
-  { href: '/admin/settings', icon: Settings, labelAr: 'الإعدادات العامة', labelEn: 'Settings' },
+  { href: '/admin/settings', icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings' },
   { href: '/admin/referral', icon: TrendingUp, labelAr: 'نظام الإحالة', labelEn: 'Referral System' },
   { href: '/admin/cms', icon: Globe, labelAr: 'إدارة المحتوى', labelEn: 'CMS' },
   { href: '/admin/pages', icon: FileText, labelAr: 'الصفحات', labelEn: 'Pages' },
   { href: '/admin/blog', icon: FileText, labelAr: 'المدونة', labelEn: 'Blog' },
-  { href: '/admin/reserved-words', icon: Shield, labelAr: 'الكلمات المحجوزة', labelEn: 'Reserved Words' },
-  { href: '/admin/email-templates', icon: Mail, labelAr: 'قوالب الإيميل', labelEn: 'Email Templates' },
-  { href: '/admin/branding', icon: Palette, labelAr: 'الهوية البصرية', labelEn: 'Branding' },
   { href: '/admin/logs', icon: Database, labelAr: 'سجل النشاط', labelEn: 'Activity Logs' },
 ];
 
 export function Sidebar({ type }: SidebarProps) {
   const pathname = usePathname();
-  const { language } = useAppStore();
-  const [collapsed, setCollapsed] = useState(false);
+  const { language, sidebarCollapsed, toggleSidebar } = useAppStore();
 
   const menuItems = type === 'admin' ? adminMenuItems : type === 'vip' ? vipMenuItems : userMenuItems;
 
@@ -80,7 +72,7 @@ export function Sidebar({ type }: SidebarProps) {
     <aside
       className={cn(
         "fixed right-0 top-16 h-[calc(100vh-4rem)] border-l bg-background z-40 transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        sidebarCollapsed ? "w-16" : "w-64"
       )}
     >
       <div className="flex flex-col h-full">
@@ -89,10 +81,10 @@ export function Sidebar({ type }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={toggleSidebar}
             className="h-8 w-8"
           >
-            {collapsed ? (
+            {sidebarCollapsed ? (
               <ChevronLeft className="h-4 w-4" />
             ) : (
               <ChevronRight className="h-4 w-4" />
@@ -115,10 +107,10 @@ export function Sidebar({ type }: SidebarProps) {
                       ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
-                  title={collapsed ? (language === 'ar' ? item.labelAr : item.labelEn) : undefined}
+                  title={sidebarCollapsed ? (language === 'ar' ? item.labelAr : item.labelEn) : undefined}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
-                  {!collapsed && (
+                  {!sidebarCollapsed && (
                     <span className="text-sm font-medium">
                       {language === 'ar' ? item.labelAr : item.labelEn}
                     </span>
@@ -134,10 +126,10 @@ export function Sidebar({ type }: SidebarProps) {
           <Link
             href="/help"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title={collapsed ? (language === 'ar' ? 'المساعدة' : 'Help') : undefined}
+            title={sidebarCollapsed ? (language === 'ar' ? 'المساعدة' : 'Help') : undefined}
           >
             <HelpCircle className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && (
+            {!sidebarCollapsed && (
               <span className="text-sm font-medium">
                 {language === 'ar' ? 'المساعدة' : 'Help'}
               </span>
