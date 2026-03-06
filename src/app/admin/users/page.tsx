@@ -19,8 +19,10 @@ import {
   Check,
   Loader2,
   Send,
-  X,
-  ArrowDown
+  ArrowDown,
+  UserPlus,
+  Trash2,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -127,11 +130,23 @@ export default function AdminUsersPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
+  const [showAddUser, setShowAddUser] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  
+  // Add new user state
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newRole, setNewRole] = useState<'user' | 'vip'>('user');
+  
+  // Delete mode state
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedForDelete, setSelectedForDelete] = useState<string[]>([]);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -244,6 +259,92 @@ export default function AdminUsersPage() {
     setActionLoading(null);
   };
 
+  // Add new user handlers
+  const handleAddUser = async () => {
+    if (!newName || !newEmail || !newPassword) {
+      toast.error(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
+      return;
+    }
+    setActionLoading('new');
+    await new Promise(r => setTimeout(r, 800));
+    const newUser = {
+      id: Date.now().toString(),
+      name: newName,
+      email: newEmail,
+      role: newRole,
+      status: 'active' as const,
+      balance: 0,
+      referralBalance: 0,
+      links: 0,
+      totalViews: 0,
+      totalEarnings: 0,
+      referralCode: `${newName.toUpperCase().slice(0, 6)}${Date.now().toString().slice(-4)}`,
+      referrals: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+      lastActive: new Date().toISOString().split('T')[0]
+    };
+    setUsers(prev => [...prev, newUser]);
+    toast.success(language === 'ar' ? `تم إضافة المستخدم ${newName} بنجاح` : `User ${newName} added successfully`);
+    setShowAddUser(false);
+    setNewName('');
+    setNewEmail('');
+    setNewPassword('');
+    setNewRole('user');
+    setActionLoading(null);
+  };
+
+  const handleCloseAddUser = () => {
+    setShowAddUser(false);
+    setNewName('');
+    setNewEmail('');
+    setNewPassword('');
+    setNewRole('user');
+  };
+
+  // Delete handlers
+  const toggleDeleteMode = () => {
+    setDeleteMode(!deleteMode);
+    setSelectedForDelete([]);
+  };
+
+  const toggleSelectUser = (userId: string) => {
+    setSelectedForDelete(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const selectAllUsers = () => {
+    if (selectedForDelete.length === filteredUsers.length) {
+      setSelectedForDelete([]);
+    } else {
+      setSelectedForDelete(filteredUsers.map(u => u.id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedForDelete.length === 0) {
+      toast.error(language === 'ar' ? 'لم يتم تحديد أي مستخدم' : 'No users selected');
+      return;
+    }
+    setDeleteLoading(true);
+    await new Promise(r => setTimeout(r, 800));
+    setUsers(prev => prev.filter(u => !selectedForDelete.includes(u.id)));
+    toast.success(language === 'ar' 
+      ? `تم حذف ${selectedForDelete.length} مستخدم` 
+      : `${selectedForDelete.length} users deleted`
+    );
+    setSelectedForDelete([]);
+    setDeleteMode(false);
+    setDeleteLoading(false);
+  };
+
+  const handleCancelDelete = () => {
+    setSelectedForDelete([]);
+    setDeleteMode(false);
+  };
+
   // Update selected user when users change
   const currentUser = selectedUser ? users.find(u => u.id === selectedUser.id) : null;
 
@@ -258,16 +359,83 @@ export default function AdminUsersPage() {
             {filteredUsers.length} {language === 'ar' ? 'مستخدم' : 'users'}
           </p>
         </div>
-        <div className="relative w-full md:w-64">
-          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={language === 'ar' ? 'بحث...' : 'Search...'}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pr-10"
-          />
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={language === 'ar' ? 'بحث...' : 'Search...'}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pr-10"
+            />
+          </div>
+          <Button 
+            onClick={() => setShowAddUser(true)}
+            className="bg-emerald-500 hover:bg-emerald-600"
+          >
+            <UserPlus className="w-4 h-4 ml-1" />
+            <span className="hidden sm:inline">{language === 'ar' ? 'إضافة' : 'Add'}</span>
+          </Button>
         </div>
       </div>
+
+      {/* Delete Mode Bar */}
+      {deleteMode && (
+        <div className="flex items-center justify-between p-3 mb-4 bg-red-50 dark:bg-red-950 rounded-lg border border-red-200 dark:border-red-800">
+          <div className="flex items-center gap-2">
+            <Checkbox 
+              checked={selectedForDelete.length === filteredUsers.length && filteredUsers.length > 0}
+              onCheckedChange={selectAllUsers}
+            />
+            <span className="text-sm">
+              {language === 'ar' 
+                ? `تم تحديد ${selectedForDelete.length} من ${filteredUsers.length}`
+                : `${selectedForDelete.length} of ${filteredUsers.length} selected`
+              }
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleCancelDelete}
+            >
+              <X className="w-4 h-4 ml-1" />
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={handleDeleteSelected}
+              disabled={selectedForDelete.length === 0 || deleteLoading}
+            >
+              {deleteLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 ml-1" />
+                  {language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Toggle Button */}
+      {!deleteMode && (
+        <div className="flex justify-end mb-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={toggleDeleteMode}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+          >
+            <Trash2 className="w-4 h-4 ml-1" />
+            {language === 'ar' ? 'حذف مستخدمين' : 'Delete Users'}
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-0">
@@ -275,6 +443,14 @@ export default function AdminUsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {deleteMode && (
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={selectedForDelete.length === filteredUsers.length && filteredUsers.length > 0}
+                        onCheckedChange={selectAllUsers}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>{language === 'ar' ? 'المستخدم' : 'User'}</TableHead>
                   <TableHead>{language === 'ar' ? 'الدور' : 'Role'}</TableHead>
                   <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
@@ -286,7 +462,15 @@ export default function AdminUsersPage() {
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((u) => (
-                  <TableRow key={u.id}>
+                  <TableRow key={u.id} className={selectedForDelete.includes(u.id) ? 'bg-red-50 dark:bg-red-950/50' : ''}>
+                    {deleteMode && (
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedForDelete.includes(u.id)}
+                          onCheckedChange={() => toggleSelectUser(u.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-sm font-medium">
@@ -310,7 +494,7 @@ export default function AdminUsersPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={actionLoading === u.id}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={actionLoading === u.id || deleteMode}>
                             {actionLoading === u.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
@@ -382,6 +566,96 @@ export default function AdminUsersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      <Dialog open={showAddUser} onOpenChange={handleCloseAddUser}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              {language === 'ar' ? 'إضافة مستخدم جديد' : 'Add New User'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>{language === 'ar' ? 'الاسم الكامل' : 'Full Name'} *</Label>
+              <Input 
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder={language === 'ar' ? 'أدخل الاسم' : 'Enter name'}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'البريد الإلكتروني' : 'Email'} *</Label>
+              <Input 
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder={language === 'ar' ? 'example@email.com' : 'example@email.com'}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'كلمة المرور' : 'Password'} *</Label>
+              <Input 
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={language === 'ar' ? 'أدخل كلمة المرور' : 'Enter password'}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'نوع الحساب' : 'Account Type'}</Label>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  type="button"
+                  variant={newRole === 'user' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setNewRole('user')}
+                  className={newRole === 'user' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                >
+                  {language === 'ar' ? 'مستخدم عادي' : 'Regular User'}
+                </Button>
+                <Button
+                  type="button"
+                  variant={newRole === 'vip' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setNewRole('vip')}
+                  className={newRole === 'vip' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+                >
+                  VIP
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={handleCloseAddUser}
+              >
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button 
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+                onClick={handleAddUser}
+                disabled={actionLoading === 'new' || !newName || !newEmail || !newPassword}
+              >
+                {actionLoading === 'new' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 ml-1" />
+                    {language === 'ar' ? 'إضافة' : 'Add'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* User Profile Modal - Smaller */}
       <Dialog open={showProfile} onOpenChange={setShowProfile}>
@@ -607,7 +881,7 @@ export default function AdminUsersPage() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <Send className="w-4 h-4 mr-2" />
+                    <Send className="w-4 h-4 ml-1" />
                     {language === 'ar' ? 'إرسال' : 'Send'}
                   </>
                 )}
