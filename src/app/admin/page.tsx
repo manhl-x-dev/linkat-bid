@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAppStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppStore } from '@/lib/store';
 import { 
   Users, 
   Link2, 
@@ -12,7 +13,8 @@ import {
   AlertTriangle,
   DollarSign,
   Activity,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +24,8 @@ import { Sidebar } from '@/components/layout/Sidebar';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { user, isAuthenticated, language } = useAppStore();
+  const { user: firebaseUser, loading: authLoading } = useAuth();
+  const { user, language, setUser, isAuthenticated } = useAppStore();
   const [stats, setStats] = useState({
     totalUsers: 1234,
     totalLinks: 5678,
@@ -34,9 +37,87 @@ export default function AdminDashboard() {
     todayClicks: 1234
   });
 
-  if (!isAuthenticated || user?.role !== 'admin') {
-    router.push('/');
-    return null;
+  // Sync Firebase user with app store
+  useEffect(() => {
+    if (firebaseUser && !isAuthenticated) {
+      setUser({
+        id: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+        role: 'user',
+        balance: 0,
+        referralBalance: 0,
+        referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+        isVip: false
+      });
+    }
+  }, [firebaseUser, isAuthenticated, setUser]);
+
+  // Fetch user role from backend
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (firebaseUser) {
+        try {
+          const res = await fetch('/api/user/profile');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user?.role === 'admin') {
+              setUser({
+                id: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                name: data.user.name || firebaseUser.displayName || 'Admin',
+                role: 'admin',
+                balance: data.user.balance || 0,
+                referralBalance: data.user.referralBalance || 0,
+                referralCode: data.user.referralCode || 'ADMIN',
+                isVip: false
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch user role:', err);
+        }
+      }
+    };
+    fetchUserRole();
+  }, [firebaseUser, setUser]);
+
+  // Redirect non-admin users
+  useEffect(() => {
+    if (!authLoading && !firebaseUser) {
+      router.push('/login');
+    }
+  }, [authLoading, firebaseUser, router]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (!firebaseUser || user?.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">
+              {language === 'ar' ? 'وصول مرفوض' : 'Access Denied'}
+            </h2>
+            <p className="mb-4 text-muted-foreground">
+              {language === 'ar' 
+                ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' 
+                : 'You do not have permission to access this page'}
+            </p>
+            <Button onClick={() => router.push('/')} className="w-full">
+              {language === 'ar' ? 'العودة للرئيسية' : 'Go Home'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const statCards = [

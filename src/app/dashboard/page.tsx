@@ -1,13 +1,49 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/lib/store';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, language } = useAppStore();
+  const router = useRouter();
+  const { user: firebaseUser, loading } = useAuth();
+  const { user, isAuthenticated, language, setUser } = useAppStore();
 
-  if (!isAuthenticated || !user) {
+  // Sync Firebase user with app store
+  useEffect(() => {
+    if (firebaseUser && !isAuthenticated) {
+      setUser({
+        id: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+        role: 'user',
+        balance: 0,
+        referralBalance: 0,
+        referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+        isVip: false
+      });
+    }
+  }, [firebaseUser, isAuthenticated, setUser]);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!loading && !firebaseUser) {
+      router.push('/login');
+    }
+  }, [loading, firebaseUser, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (!firebaseUser || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
