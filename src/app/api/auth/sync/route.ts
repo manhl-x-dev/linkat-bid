@@ -18,18 +18,33 @@ export async function POST(request: NextRequest) {
       where: { email },
     });
 
+    // Admin emails list - users with these emails will be admins
+    const adminEmails = [
+      'manhl.aboufakher@gmail.com',
+      'admin@lalinky.com',
+      'admin@linkat.bid'
+    ];
+
+    const isAdmin = adminEmails.includes(email.toLowerCase());
+
     if (user) {
       // Update existing user with Firebase UID if not set
-      if (!user.firebaseUid) {
-        user = await db.user.update({
-          where: { id: user.id },
-          data: {
-            firebaseUid: uid,
-            name: displayName || user.name,
-            image: photoURL || user.image,
-          },
-        });
+      // Also update role if they should be admin
+      const updateData: Record<string, unknown> = {
+        firebaseUid: uid,
+        name: displayName || user.name,
+        image: photoURL || user.image,
+      };
+      
+      // If user should be admin, update their role
+      if (isAdmin && user.role !== 'admin') {
+        updateData.role = 'admin';
       }
+      
+      user = await db.user.update({
+        where: { id: user.id },
+        data: updateData,
+      });
     } else {
       // Create new user
       user = await db.user.create({
@@ -38,7 +53,7 @@ export async function POST(request: NextRequest) {
           name: displayName || email.split('@')[0],
           image: photoURL,
           firebaseUid: uid,
-          role: 'user',
+          role: isAdmin ? 'admin' : 'user',
           balance: 0,
           referralBalance: 0,
           totalEarnings: 0,

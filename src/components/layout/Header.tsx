@@ -235,7 +235,7 @@ export function Header() {
                       {language === 'ar' ? 'المحفظة' : 'Wallet'}
                     </Link>
                   </DropdownMenuItem>
-                  {user.role === 'admin' && (
+                  {user.role?.toLowerCase() === 'admin' && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
