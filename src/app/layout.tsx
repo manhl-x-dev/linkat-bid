@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Cairo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
-
+import { DirectionProvider } from '@/components/layout/DirectionProvider';
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -51,6 +51,7 @@ export default function RootLayout({
       <body
           className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} font-[family-name:var(--font-cairo)] antialiased bg-background text-foreground`}
        >
+        <DirectionProvider />
         <AuthProvider>
           {children}
         </AuthProvider>
