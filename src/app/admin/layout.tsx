@@ -46,25 +46,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   // Not admin
-  if (user?.role !== 'admin') {
+  const OWNER_EMAIL = 'manhl.aboufakher@gmail.com';
+  const isAdmin = user?.role?.toLowerCase() === 'admin' || user?.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">
-              {language === 'ar' ? 'وصول مرفوض' : 'Access Denied'}
+              {language === 'ar' ? 'ÙØµÙÙ ÙØ±ÙÙØ¶' : 'Access Denied'}
             </h2>
             <p className="mb-4 text-muted-foreground">
               {language === 'ar' 
-                ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' 
+                ? 'ÙÙØ³ ÙØ¯ÙÙ ØµÙØ§Ø­ÙØ© ÙÙÙØµÙÙ Ø¥ÙÙ ÙØ°Ù Ø§ÙØµÙØ­Ø©' 
                 : 'You do not have permission to access this page'}
             </p>
             <p className="text-xs text-muted-foreground mb-4">
-              {language === 'ar' ? 'دورك الحالي:' : 'Your current role:'} {user?.role || 'غير محدد'}
+              {language === 'ar' ? 'Ø¯ÙØ±Ù Ø§ÙØ­Ø§ÙÙ:' : 'Your current role:'} {user?.role || 'ØºÙØ± ÙØ­Ø¯Ø¯'}
             </p>
             <Button onClick={() => router.push('/')} className="w-full">
-              {language === 'ar' ? 'العودة للرئيسية' : 'Go Home'}
+              {language === 'ar' ? 'Ø§ÙØ¹ÙØ¯Ø© ÙÙØ±Ø¦ÙØ³ÙØ©' : 'Go Home'}
             </Button>
           </CardContent>
         </Card>
