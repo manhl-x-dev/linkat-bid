@@ -21,6 +21,7 @@ interface AppState {
   
   // Actions
   setUser: (user: User | null) => void;
+  clearUser: () => void;
   logout: () => void;
   setLanguage: (lang: 'ar' | 'en' | 'fr' | 'es' | 'it' | 'zh') => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
@@ -69,6 +70,11 @@ export const useAppStore = create<AppState>()(
       setUser: (user) => set({ 
         user, 
         isAuthenticated: !!user 
+      }),
+      
+      clearUser: () => set({ 
+        user: null, 
+        isAuthenticated: false 
       }),
       
       logout: () => set({ 

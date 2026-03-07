@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Link2, 
   Menu, 
@@ -17,7 +18,8 @@ import {
   Sun,
   Moon,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -42,8 +44,10 @@ const languages = [
 ];
 
 export function Header() {
-  const { user, isAuthenticated, logout, language, setLanguage, theme, setTheme } = useAppStore();
+  const { user, isAuthenticated, language, setLanguage, theme, setTheme } = useAppStore();
+  const { signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -74,7 +78,16 @@ export function Header() {
   };
 
   const handleLogout = async () => {
-    logout();
+    setLoggingOut(true);
+    try {
+      await signOut();
+      // Redirect to home page after logout
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const navLinks = [
@@ -234,8 +247,16 @@ export function Header() {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400">
-                    <LogOut className="w-4 h-4 mr-2" />
+                  <DropdownMenuItem 
+                    onClick={handleLogout} 
+                    className="text-red-600 dark:text-red-400 cursor-pointer"
+                    disabled={loggingOut}
+                  >
+                    {loggingOut ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <LogOut className="w-4 h-4 mr-2" />
+                    )}
                     {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -313,6 +334,21 @@ export function Header() {
                   {lang.name}
                 </button>
               ))}
+              {/* Mobile Logout */}
+              {isAuthenticated && user && (
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="flex items-center gap-2 w-full py-2 text-sm text-red-600"
+                >
+                  {loggingOut ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LogOut className="w-4 h-4" />
+                  )}
+                  {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                </button>
+              )}
             </div>
           </nav>
         </div>
