@@ -35,12 +35,12 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const languages = [
-  { code: 'ar', name: 'Ø§ÙØ¹Ø±Ø¨ÙØ©' },
+  { code: 'ar', name: 'العربية' },
   { code: 'en', name: 'English' },
-  { code: 'fr', name: 'FranÃ§ais' },
-  { code: 'es', name: 'EspaÃ±ol' },
+  { code: 'fr', name: 'Français' },
+  { code: 'es', name: 'Español' },
   { code: 'it', name: 'Italiano' },
-  { code: 'zh', name: 'ä¸­æ' },
+  { code: 'zh', name: '中文' },
 ];
 
 export function Header() {
@@ -91,6 +91,13 @@ export function Header() {
     }
   }, [user?.role]);
 
+  // Apply language and direction to document
+  useEffect(() => {
+    const root = document.documentElement;
+    root.lang = language;
+    root.dir = language === 'ar' ? 'rtl' : 'ltr';
+  }, [language]);
+
   // Apply theme to document
   useEffect(() => {
     const root = document.documentElement;
@@ -130,11 +137,11 @@ export function Header() {
   };
 
   const navLinks = [
-    { href: '/', label: language === 'ar' ? 'Ø§ÙØ±Ø¦ÙØ³ÙØ©' : 'Home' },
-    { href: '/#features', label: language === 'ar' ? 'Ø§ÙÙÙÙØ²Ø§Øª' : 'Features' },
-    { href: '/#pricing', label: language === 'ar' ? 'Ø§ÙØ£Ø³Ø¹Ø§Ø±' : 'Pricing' },
-    { href: '/faq', label: language === 'ar' ? 'Ø§ÙØ£Ø³Ø¦ÙØ© Ø§ÙØ´Ø§Ø¦Ø¹Ø©' : 'FAQ' },
-    { href: '/contact', label: language === 'ar' ? 'ØªÙØ§ØµÙ ÙØ¹ÙØ§' : 'Contact' },
+    { href: '/', label: language === 'ar' ? 'الرئيسية' : 'Home' },
+    { href: '/#features', label: language === 'ar' ? 'المميزات' : 'Features' },
+    { href: '/#pricing', label: language === 'ar' ? 'الأسعار' : 'Pricing' },
+    { href: '/faq', label: language === 'ar' ? 'الأسئلة الشائعة' : 'FAQ' },
+    { href: '/contact', label: language === 'ar' ? 'تواصل معنا' : 'Contact' },
   ];
 
   return (
@@ -148,7 +155,7 @@ export function Header() {
             "hover:bg-accent hover:text-accent-foreground transition-colors",
             isArabic ? "right-20" : "left-4"
           )}
-          title={isArabic ? 'Ø§ÙØ±Ø¬ÙØ¹ ÙÙØµÙØ­Ø© Ø§ÙØ³Ø§Ø¨ÙØ©' : 'Go back to previous page'}
+          title={isArabic ? 'الرجوع للصفحة السابقة' : 'Go back to previous page'}
         >
           {isArabic ? (
             <ArrowRight className="w-5 h-5" />
@@ -192,8 +199,8 @@ export function Header() {
             className="hidden sm:flex"
             onClick={toggleTheme}
             title={isDark 
-              ? (language === 'ar' ? 'Ø§ÙÙØ¶Ø¹ Ø§ÙÙÙØ§Ø±Ù' : 'Light Mode')
-              : (language === 'ar' ? 'Ø§ÙÙØ¶Ø¹ Ø§ÙÙÙÙÙ' : 'Dark Mode')
+              ? (language === 'ar' ? 'الوضع النهاري' : 'Light Mode')
+              : (language === 'ar' ? 'الوضع الليلي' : 'Dark Mode')
             }
           >
             {isDark ? (
@@ -259,19 +266,19 @@ export function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard" className="flex items-center gap-2">
                       <User className="w-4 h-4" />
-                      {language === 'ar' ? 'ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ' : 'Dashboard'}
+                      {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/links" className="flex items-center gap-2">
                       <Link2 className="w-4 h-4" />
-                      {language === 'ar' ? 'Ø±ÙØ§Ø¨Ø·Ù' : 'My Links'}
+                      {language === 'ar' ? 'روابطي' : 'My Links'}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/wallet" className="flex items-center gap-2">
                       <Wallet className="w-4 h-4" />
-                      {language === 'ar' ? 'Ø§ÙÙØ­ÙØ¸Ø©' : 'Wallet'}
+                      {language === 'ar' ? 'المحفظة' : 'Wallet'}
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin && (
@@ -280,7 +287,7 @@ export function Header() {
                       <DropdownMenuItem asChild>
                         <Link href="/admin" className="flex items-center gap-2">
                           <Settings className="w-4 h-4" />
-                          {language === 'ar' ? 'Ø¥Ø¯Ø§Ø±Ø© Ø§ÙÙÙÙØ¹' : 'Admin Panel'}
+                          {language === 'ar' ? 'إدارة الموقع' : 'Admin Panel'}
                         </Link>
                       </DropdownMenuItem>
                     </>
@@ -296,7 +303,7 @@ export function Header() {
                     ) : (
                       <LogOut className="w-4 h-4 mr-2" />
                     )}
-                    {language === 'ar' ? 'ØªØ³Ø¬ÙÙ Ø§ÙØ®Ø±ÙØ¬' : 'Logout'}
+                    {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -305,12 +312,12 @@ export function Header() {
             <div className="flex items-center gap-2">
               <Button variant="ghost" asChild className="hidden sm:inline-flex">
                 <Link href="/login">
-                  {language === 'ar' ? 'ØªØ³Ø¬ÙÙ Ø§ÙØ¯Ø®ÙÙ' : 'Login'}
+                  {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
                 </Link>
               </Button>
               <Button asChild className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
                 <Link href="/register">
-                  {language === 'ar' ? 'Ø¥ÙØ´Ø§Ø¡ Ø­Ø³Ø§Ø¨' : 'Sign Up'}
+                  {language === 'ar' ? 'إنشاء حساب' : 'Sign Up'}
                 </Link>
               </Button>
             </div>
@@ -351,12 +358,12 @@ export function Header() {
                 {isDark ? (
                   <>
                     <Sun className="w-4 h-4 text-amber-500" />
-                    <span>{language === 'ar' ? 'Ø§ÙÙØ¶Ø¹ Ø§ÙÙÙØ§Ø±Ù' : 'Light Mode'}</span>
+                    <span>{language === 'ar' ? 'الوضع النهاري' : 'Light Mode'}</span>
                   </>
                 ) : (
                   <>
                     <Moon className="w-4 h-4" />
-                    <span>{language === 'ar' ? 'Ø§ÙÙØ¶Ø¹ Ø§ÙÙÙÙÙ' : 'Dark Mode'}</span>
+                    <span>{language === 'ar' ? 'الوضع الليلي' : 'Dark Mode'}</span>
                   </>
                 )}
               </button>
@@ -381,7 +388,7 @@ export function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Settings className="w-4 h-4" />
-                  {language === 'ar' ? 'Ø¥Ø¯Ø§Ø±Ø© Ø§ÙÙÙÙØ¹' : 'Admin Panel'}
+                  {language === 'ar' ? 'إدارة الموقع' : 'Admin Panel'}
                 </Link>
               )}
               {/* Mobile Logout */}
@@ -396,7 +403,7 @@ export function Header() {
                   ) : (
                     <LogOut className="w-4 h-4" />
                   )}
-                  {language === 'ar' ? 'ØªØ³Ø¬ÙÙ Ø§ÙØ®Ø±ÙØ¬' : 'Logout'}
+                  {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
                 </button>
               )}
             </div>
