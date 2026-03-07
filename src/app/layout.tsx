@@ -49,8 +49,8 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
+          className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} font-[family-name:var(--font-cairo)] antialiased bg-background text-foreground`}
+       >
         <AuthProvider>
           {children}
         </AuthProvider>
