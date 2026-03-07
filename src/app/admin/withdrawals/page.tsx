@@ -1,20 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, X, Wallet, Clock, CheckCircle } from 'lucide-react';
+import { Check, X, Wallet, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+
+interface Withdrawal {
+  id: number;
+  user: string;
+  amount: number;
+  wallet: string;
+  network: string;
+  status: 'pending' | 'completed' | 'rejected';
+  date: string;
+}
 
 export default function AdminWithdrawalsPage() {
   const { language } = useAppStore();
-
-  const withdrawals = [
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([
     { id: 1, user: 'user@test.com', amount: 50, wallet: 'TKx...abc', network: 'TRC20', status: 'pending', date: '2024-01-15' },
     { id: 2, user: 'demo@test.com', amount: 25, wallet: '0x...def', network: 'BEP20', status: 'completed', date: '2024-01-14' },
     { id: 3, user: 'promo@test.com', amount: 100, wallet: 'TKp...xyz', network: 'TRC20', status: 'pending', date: '2024-01-15' },
     { id: 4, user: 'vip@test.com', amount: 75, wallet: '0x...123', network: 'BEP20', status: 'rejected', date: '2024-01-13' },
-  ];
+  ]);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -28,6 +40,32 @@ export default function AdminWithdrawalsPage() {
       rejected: language === 'ar' ? 'مرفوض' : 'Rejected',
     };
     return <Badge className={styles[status]}>{labels[status]}</Badge>;
+  };
+
+  const handleApprove = async (withdrawal: Withdrawal) => {
+    setActionLoading(withdrawal.id);
+    await new Promise(r => setTimeout(r, 600));
+    setWithdrawals(prev => prev.map(w => 
+      w.id === withdrawal.id ? { ...w, status: 'completed' as const } : w
+    ));
+    toast.success(language === 'ar' 
+      ? `تم تأكيد سحب $${withdrawal.amount} للمستخدم ${withdrawal.user}` 
+      : `Approved $${withdrawal.amount} withdrawal for ${withdrawal.user}`
+    );
+    setActionLoading(null);
+  };
+
+  const handleReject = async (withdrawal: Withdrawal) => {
+    setActionLoading(withdrawal.id);
+    await new Promise(r => setTimeout(r, 600));
+    setWithdrawals(prev => prev.map(w => 
+      w.id === withdrawal.id ? { ...w, status: 'rejected' as const } : w
+    ));
+    toast.error(language === 'ar' 
+      ? `تم رفض سحب $${withdrawal.amount} للمستخدم ${withdrawal.user}` 
+      : `Rejected $${withdrawal.amount} withdrawal for ${withdrawal.user}`
+    );
+    setActionLoading(null);
   };
 
   return (
@@ -74,18 +112,44 @@ export default function AdminWithdrawalsPage() {
                       <div className="flex items-center justify-center gap-2">
                         {w.status === 'pending' && (
                           <>
-                            <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
-                              <Check className="w-4 h-4" />
+                            <Button 
+                              size="sm" 
+                              className="bg-emerald-500 hover:bg-emerald-600"
+                              onClick={() => handleApprove(w)}
+                              disabled={actionLoading === w.id}
+                              title={language === 'ar' ? 'تأكيد السحب' : 'Approve withdrawal'}
+                            >
+                              {actionLoading === w.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Check className="w-4 h-4" />
+                              )}
                             </Button>
-                            <Button size="sm" variant="destructive">
-                              <X className="w-4 h-4" />
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleReject(w)}
+                              disabled={actionLoading === w.id}
+                              title={language === 'ar' ? 'رفض السحب' : 'Reject withdrawal'}
+                            >
+                              {actionLoading === w.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <X className="w-4 h-4" />
+                              )}
                             </Button>
                           </>
                         )}
                         {w.status === 'completed' && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            {language === 'ar' ? 'تم' : 'Done'}
+                          <span className="text-xs text-emerald-600 flex items-center gap-1">
+                            <CheckCircle className="w-4 h-4" />
+                            {language === 'ar' ? 'تم التأكيد' : 'Confirmed'}
+                          </span>
+                        )}
+                        {w.status === 'rejected' && (
+                          <span className="text-xs text-red-600 flex items-center gap-1">
+                            <XCircle className="w-4 h-4" />
+                            {language === 'ar' ? 'تم الرفض' : 'Rejected'}
                           </span>
                         )}
                       </div>
