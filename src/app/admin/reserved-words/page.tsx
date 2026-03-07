@@ -5,27 +5,49 @@ import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ShieldCheck, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Plus, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { SettingsNav } from '@/components/admin/SettingsNav';
+import { toast } from 'sonner';
 
 export default function AdminReservedWordsPage() {
   const { language } = useAppStore();
   const [newWord, setNewWord] = useState('');
+  const [loading, setLoading] = useState(false);
   const [words, setWords] = useState([
     'admin', 'api', 'login', 'register', 'dashboard', 'settings', 
     'wallet', 'withdraw', 'user', 'users', 'links', 'blog',
     'privacy', 'terms', 'faq', 'contact', 'help', 'referral'
   ]);
 
-  const handleAdd = () => {
-    if (newWord && !words.includes(newWord.toLowerCase())) {
-      setWords([...words, newWord.toLowerCase()]);
-      setNewWord('');
+  const handleAdd = async () => {
+    if (!newWord.trim()) {
+      toast.error(language === 'ar' ? 'يرجى إدخال كلمة' : 'Please enter a word');
+      return;
     }
+    
+    const word = newWord.toLowerCase().trim();
+    
+    if (words.includes(word)) {
+      toast.error(language === 'ar' ? 'هذه الكلمة موجودة بالفعل' : 'This word already exists');
+      return;
+    }
+    
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 400));
+    
+    setWords(prev => [...prev, word]);
+    setNewWord('');
+    toast.success(language === 'ar' ? `تم إضافة "${word}" إلى الكلمات المحجوزة` : `"${word}" added to reserved words`);
+    setLoading(false);
   };
 
-  const handleRemove = (word: string) => {
-    setWords(words.filter(w => w !== word));
+  const handleRemove = async (word: string) => {
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 300));
+    
+    setWords(prev => prev.filter(w => w !== word));
+    toast.info(language === 'ar' ? `تم إزالة "${word}" من الكلمات المحجوزة` : `"${word}" removed from reserved words`);
+    setLoading(false);
   };
 
   return (
@@ -65,9 +87,19 @@ export default function AdminReservedWordsPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                 className="flex-1"
               />
-              <Button onClick={handleAdd} className="bg-emerald-500 hover:bg-emerald-600">
-                <Plus className="w-4 h-4 ml-2" />
-                {language === 'ar' ? 'إضافة' : 'Add'}
+              <Button 
+                onClick={handleAdd} 
+                className="bg-emerald-500 hover:bg-emerald-600"
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 ml-2" />
+                    {language === 'ar' ? 'إضافة' : 'Add'}
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>
@@ -111,8 +143,10 @@ export default function AdminReservedWordsPage() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-6 w-6"
+                    className="h-6 w-6 hover:bg-red-100 dark:hover:bg-red-900"
                     onClick={() => handleRemove(w)}
+                    disabled={loading}
+                    title={language === 'ar' ? 'حذف' : 'Delete'}
                   >
                     <Trash2 className="w-3 h-3 text-red-500" />
                   </Button>

@@ -7,17 +7,78 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Save, Globe, DollarSign, Shield, Bell, Loader2 } from 'lucide-react';
+import { Save, Globe, DollarSign, Shield, Bell, Loader2, Check } from 'lucide-react';
 import { SettingsNav } from '@/components/admin/SettingsNav';
+import { toast } from 'sonner';
+
+interface SiteSettings {
+  siteName: string;
+  domain: string;
+  description: string;
+  email: string;
+  defaultLanguage: string;
+  referralCommission: number;
+  minWithdrawal: number;
+  cpmRate: number;
+  userShare: number;
+  autoWithdrawal: boolean;
+  twoFactorAuth: boolean;
+  spamProtection: boolean;
+  contentFilter: boolean;
+  emailNotifications: boolean;
+  withdrawalAlerts: boolean;
+  reportAlerts: boolean;
+}
 
 export default function AdminSettingsPage() {
   const { language } = useAppStore();
   const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>({
+    siteName: 'lalinky.com',
+    domain: 'lalinky.com',
+    description: 'Smart URL Shortener with real earnings',
+    email: 'support@lalinky.com',
+    defaultLanguage: 'ar',
+    referralCommission: 20,
+    minWithdrawal: 10,
+    cpmRate: 50,
+    userShare: 50,
+    autoWithdrawal: false,
+    twoFactorAuth: true,
+    spamProtection: true,
+    contentFilter: true,
+    emailNotifications: true,
+    withdrawalAlerts: true,
+    reportAlerts: true,
+  });
 
   const handleSave = async () => {
     setSaving(true);
     await new Promise(r => setTimeout(r, 1000));
     setSaving(false);
+    toast.success(language === 'ar' ? 'تم حفظ الإعدادات بنجاح' : 'Settings saved successfully');
+  };
+
+  const handleReset = () => {
+    setSettings({
+      siteName: 'lalinky.com',
+      domain: 'lalinky.com',
+      description: 'Smart URL Shortener with real earnings',
+      email: 'support@lalinky.com',
+      defaultLanguage: 'ar',
+      referralCommission: 20,
+      minWithdrawal: 10,
+      cpmRate: 50,
+      userShare: 50,
+      autoWithdrawal: false,
+      twoFactorAuth: true,
+      spamProtection: true,
+      contentFilter: true,
+      emailNotifications: true,
+      withdrawalAlerts: true,
+      reportAlerts: true,
+    });
+    toast.info(language === 'ar' ? 'تم إعادة الإعدادات الافتراضية' : 'Settings reset to defaults');
   };
 
   return (
@@ -51,25 +112,45 @@ export default function AdminSettingsPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>{language === 'ar' ? 'اسم الموقع' : 'Site Name'}</Label>
-                <Input defaultValue="lalinky.com" className="mt-1.5" />
+                <Input 
+                  value={settings.siteName}
+                  onChange={(e) => setSettings({...settings, siteName: e.target.value})}
+                  className="mt-1.5" 
+                />
               </div>
               <div>
                 <Label>{language === 'ar' ? 'النطاق' : 'Domain'}</Label>
-                <Input defaultValue="lalinky.com" className="mt-1.5" />
+                <Input 
+                  value={settings.domain}
+                  onChange={(e) => setSettings({...settings, domain: e.target.value})}
+                  className="mt-1.5" 
+                />
               </div>
             </div>
             <div>
               <Label>{language === 'ar' ? 'وصف الموقع' : 'Site Description'}</Label>
-              <Input defaultValue="Smart URL Shortener with real earnings" className="mt-1.5" />
+              <Input 
+                value={settings.description}
+                onChange={(e) => setSettings({...settings, description: e.target.value})}
+                className="mt-1.5" 
+              />
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>{language === 'ar' ? 'البريد الإلكتروني' : 'Email'}</Label>
-                <Input defaultValue="support@lalinky.com" className="mt-1.5" />
+                <Input 
+                  value={settings.email}
+                  onChange={(e) => setSettings({...settings, email: e.target.value})}
+                  className="mt-1.5" 
+                />
               </div>
               <div>
                 <Label>{language === 'ar' ? 'اللغة الافتراضية' : 'Default Language'}</Label>
-                <Input defaultValue="ar" className="mt-1.5" />
+                <Input 
+                  value={settings.defaultLanguage}
+                  onChange={(e) => setSettings({...settings, defaultLanguage: e.target.value})}
+                  className="mt-1.5" 
+                />
               </div>
             </div>
           </CardContent>
@@ -90,21 +171,41 @@ export default function AdminSettingsPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>{language === 'ar' ? 'عمولة الإحالة (%)' : 'Referral Commission (%)'}</Label>
-                <Input type="number" defaultValue="20" className="mt-1.5" />
+                <Input 
+                  type="number" 
+                  value={settings.referralCommission}
+                  onChange={(e) => setSettings({...settings, referralCommission: Number(e.target.value)})}
+                  className="mt-1.5" 
+                />
               </div>
               <div>
                 <Label>{language === 'ar' ? 'الحد الأدنى للسحب ($)' : 'Min Withdrawal ($)'}</Label>
-                <Input type="number" defaultValue="10" className="mt-1.5" />
+                <Input 
+                  type="number" 
+                  value={settings.minWithdrawal}
+                  onChange={(e) => setSettings({...settings, minWithdrawal: Number(e.target.value)})}
+                  className="mt-1.5" 
+                />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label>{language === 'ar' ? 'أجرأة النقرة (سنت)' : 'CPM Rate (cents)'}</Label>
-                <Input type="number" defaultValue="50" className="mt-1.5" />
+                <Label>{language === 'ar' ? 'أجرة النقرة (سنت)' : 'CPM Rate (cents)'}</Label>
+                <Input 
+                  type="number" 
+                  value={settings.cpmRate}
+                  onChange={(e) => setSettings({...settings, cpmRate: Number(e.target.value)})}
+                  className="mt-1.5" 
+                />
               </div>
               <div>
                 <Label>{language === 'ar' ? 'نسبة المستخدم (%)' : 'User Share (%)'}</Label>
-                <Input type="number" defaultValue="50" className="mt-1.5" />
+                <Input 
+                  type="number" 
+                  value={settings.userShare}
+                  onChange={(e) => setSettings({...settings, userShare: Number(e.target.value)})}
+                  className="mt-1.5" 
+                />
               </div>
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -114,7 +215,10 @@ export default function AdminSettingsPage() {
                   {language === 'ar' ? 'معالجة طلبات السحب تلقائياً' : 'Process withdrawal requests automatically'}
                 </p>
               </div>
-              <Switch />
+              <Switch 
+                checked={settings.autoWithdrawal}
+                onCheckedChange={(checked) => setSettings({...settings, autoWithdrawal: checked})}
+              />
             </div>
           </CardContent>
         </Card>
@@ -138,7 +242,10 @@ export default function AdminSettingsPage() {
                   {language === 'ar' ? 'تفعيل التحقق بخطوتين للمدراء' : 'Enable 2FA for admins'}
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.twoFactorAuth}
+                onCheckedChange={(checked) => setSettings({...settings, twoFactorAuth: checked})}
+              />
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
@@ -147,7 +254,10 @@ export default function AdminSettingsPage() {
                   {language === 'ar' ? 'حماية الروابط من السبام' : 'Protect links from spam'}
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.spamProtection}
+                onCheckedChange={(checked) => setSettings({...settings, spamProtection: checked})}
+              />
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
@@ -156,7 +266,10 @@ export default function AdminSettingsPage() {
                   {language === 'ar' ? 'فلترة الروابط الضارة تلقائياً' : 'Auto-filter malicious links'}
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.contentFilter}
+                onCheckedChange={(checked) => setSettings({...settings, contentFilter: checked})}
+              />
             </div>
           </CardContent>
         </Card>
@@ -180,7 +293,10 @@ export default function AdminSettingsPage() {
                   {language === 'ar' ? 'إرسال إشعارات بالبريد للمستخدمين' : 'Send email notifications to users'}
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.emailNotifications}
+                onCheckedChange={(checked) => setSettings({...settings, emailNotifications: checked})}
+              />
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
@@ -189,7 +305,10 @@ export default function AdminSettingsPage() {
                   {language === 'ar' ? 'إشعار المدير عند طلب سحب جديد' : 'Notify admin on new withdrawal'}
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.withdrawalAlerts}
+                onCheckedChange={(checked) => setSettings({...settings, withdrawalAlerts: checked})}
+              />
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
@@ -198,13 +317,19 @@ export default function AdminSettingsPage() {
                   {language === 'ar' ? 'إشعار المدير عند بلاغ جديد' : 'Notify admin on new report'}
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.reportAlerts}
+                onCheckedChange={(checked) => setSettings({...settings, reportAlerts: checked})}
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* Save Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={handleReset}>
+            {language === 'ar' ? 'إعادة الافتراضي' : 'Reset Defaults'}
+          </Button>
           <Button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 min-w-32">
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
