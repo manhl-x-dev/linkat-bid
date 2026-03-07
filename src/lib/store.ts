@@ -23,6 +23,7 @@ interface AppState {
   setUser: (user: User | null) => void;
   clearUser: () => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   setLanguage: (lang: 'ar' | 'en' | 'fr' | 'es' | 'it' | 'zh') => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   updateBalance: (balance: number, referralBalance?: number) => void;
@@ -60,7 +61,7 @@ const safeStorage = {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       language: 'ar',
@@ -81,6 +82,28 @@ export const useAppStore = create<AppState>()(
         user: null, 
         isAuthenticated: false 
       }),
+      
+      refreshUser: async () => {
+        const currentUser = get().user;
+        if (!currentUser?.email) return;
+        
+        try {
+          const res = await fetch(`/api/admin/make-admin?email=${encodeURIComponent(currentUser.email)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user) {
+              set({
+                user: {
+                  ...currentUser,
+                  role: data.user.role
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh user:', error);
+        }
+      },
       
       setLanguage: (language) => set({ language }),
       

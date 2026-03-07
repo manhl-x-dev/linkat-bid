@@ -45,11 +45,18 @@ const languages = [
 
 export function Header() {
   const { user, isAuthenticated, language, setLanguage, theme, setTheme } = useAppStore();
-  const { signOut } = useAuth();
+  const { signOut, refreshUserData } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  // Refresh user data on mount to get latest role
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      refreshUserData();
+    }
+  }, []);
 
   // Apply theme to document
   useEffect(() => {

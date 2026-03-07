@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
-  User,
+  User as FirebaseUser,
   onAuthStateChanged,
   signInWithPopup,
   signInWithEmailAndPassword,
@@ -16,13 +16,14 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseUser | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  refreshUserData: () => Promise<void>;
   error: string | null;
   clearError: () => void;
 }
@@ -30,7 +31,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -133,8 +134,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearError = () => setError(null);
 
+  // Refresh user data from backend
+  const refreshUserData = async () => {
+    if (!user?.email) return;
+    
+    try {
+      const response = await fetch(`/api/user/refresh?email=${encodeURIComponent(user.email)}`);
+      const data = await response.json();
+      
+      if (data.success && data.user) {
+        setAppUser({
+          id: data.user.id || user.uid,
+          email: data.user.email || user.email || '',
+          name: data.user.name || user.displayName || 'User',
+          role: data.user.role || 'user',
+          balance: data.user.balance || 0,
+          referralBalance: data.user.referralBalance || 0,
+          referralCode: data.user.referralCode || '',
+          isVip: data.user.role === 'vip',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to refresh user data:', err);
+    }
+  };
+
   // Sync Firebase user with our backend and update app store
-  const syncUserWithBackend = async (firebaseUser: User, displayName?: string) => {
+  const syncUserWithBackend = async (firebaseUser: FirebaseUser, displayName?: string) => {
     try {
       const token = await firebaseUser.getIdToken();
       
@@ -182,6 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUpWithEmail,
         signOut,
         resetPassword,
+        refreshUserData,
         error,
         clearError,
       }}
