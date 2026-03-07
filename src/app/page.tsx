@@ -26,13 +26,42 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 
 export default function HomePage() {
-  const { language } = useAppStore();
+  const { user, language } = useAppStore();
   const [url, setUrl] = useState('');
   const [shortenedUrl, setShortenedUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleShorten = async () => {
+    if (!url) return;
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/links/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          targetUrl: url
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShortenedUrl(`linkat.bid/${data.link.shortCode}`);
+      } else {
+        alert(data.error || 'Error shortening link');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const oldHandleShorten = async () => {
     if (!url) return;
     setLoading(true);
     // Simulate shortening
@@ -52,60 +81,60 @@ export default function HomePage() {
   const features = [
     {
       icon: Zap,
-      titleAr: 'اختصار فوري',
+      titleAr: 'Ø§Ø®ØªØµØ§Ø± ÙÙØ±Ù',
       titleEn: 'Instant Shortening',
-      descAr: 'اختصار روابطك في ثوانٍ معدودة مع دعم الروابط المخصصة',
+      descAr: 'Ø§Ø®ØªØµØ§Ø± Ø±ÙØ§Ø¨Ø·Ù ÙÙ Ø«ÙØ§ÙÙ ÙØ¹Ø¯ÙØ¯Ø© ÙØ¹ Ø¯Ø¹Ù Ø§ÙØ±ÙØ§Ø¨Ø· Ø§ÙÙØ®ØµØµØ©',
       descEn: 'Shorten your links in seconds with custom URL support'
     },
     {
       icon: DollarSign,
-      titleAr: 'أرباح حقيقية',
+      titleAr: 'Ø£Ø±Ø¨Ø§Ø­ Ø­ÙÙÙÙØ©',
       titleEn: 'Real Earnings',
-      descAr: 'احصل على 50% من أرباح الإعلانات على كل نقرة',
+      descAr: 'Ø§Ø­ØµÙ Ø¹ÙÙ 50% ÙÙ Ø£Ø±Ø¨Ø§Ø­ Ø§ÙØ¥Ø¹ÙØ§ÙØ§Øª Ø¹ÙÙ ÙÙ ÙÙØ±Ø©',
       descEn: 'Get 50% of ad revenue on every click'
     },
     {
       icon: Users,
-      titleAr: 'نظام إحالة',
+      titleAr: 'ÙØ¸Ø§Ù Ø¥Ø­Ø§ÙØ©',
       titleEn: 'Referral System',
-      descAr: 'اكسب 20% إضافية من أرباح المسجلين برابطك',
+      descAr: 'Ø§ÙØ³Ø¨ 20% Ø¥Ø¶Ø§ÙÙØ© ÙÙ Ø£Ø±Ø¨Ø§Ø­ Ø§ÙÙØ³Ø¬ÙÙÙ Ø¨Ø±Ø§Ø¨Ø·Ù',
       descEn: 'Earn extra 20% from users who sign up with your link'
     },
     {
       icon: Wallet,
-      titleAr: 'دفعات فورية',
+      titleAr: 'Ø¯ÙØ¹Ø§Øª ÙÙØ±ÙØ©',
       titleEn: 'Instant Payouts',
-      descAr: 'سحب أرباحك بالعملات الرقمية USDT فوراً',
+      descAr: 'Ø³Ø­Ø¨ Ø£Ø±Ø¨Ø§Ø­Ù Ø¨Ø§ÙØ¹ÙÙØ§Øª Ø§ÙØ±ÙÙÙØ© USDT ÙÙØ±Ø§Ù',
       descEn: 'Withdraw your earnings in USDT cryptocurrency instantly'
     },
     {
       icon: Shield,
-      titleAr: 'حماية متقدمة',
+      titleAr: 'Ø­ÙØ§ÙØ© ÙØªÙØ¯ÙØ©',
       titleEn: 'Advanced Protection',
-      descAr: 'نظام حماية ضد الروابط الضارة والاحتيال',
+      descAr: 'ÙØ¸Ø§Ù Ø­ÙØ§ÙØ© Ø¶Ø¯ Ø§ÙØ±ÙØ§Ø¨Ø· Ø§ÙØ¶Ø§Ø±Ø© ÙØ§ÙØ§Ø­ØªÙØ§Ù',
       descEn: 'Protection system against malicious links and fraud'
     },
     {
       icon: TrendingUp,
-      titleAr: 'إحصائيات مفصلة',
+      titleAr: 'Ø¥Ø­ØµØ§Ø¦ÙØ§Øª ÙÙØµÙØ©',
       titleEn: 'Detailed Analytics',
-      descAr: 'تتبع نقراتك ودول الزوار وأجهزتهم بشكل مفصل',
+      descAr: 'ØªØªØ¨Ø¹ ÙÙØ±Ø§ØªÙ ÙØ¯ÙÙ Ø§ÙØ²ÙØ§Ø± ÙØ£Ø¬ÙØ²ØªÙÙ Ø¨Ø´ÙÙ ÙÙØµÙ',
       descEn: 'Track your clicks, visitor countries and devices in detail'
     },
   ];
 
   const stats = [
-    { value: '1M+', labelAr: 'رابط مختصر', labelEn: 'Shortened Links' },
-    { value: '500K+', labelAr: 'مستخدم نشط', labelEn: 'Active Users' },
-    { value: '$2M+', labelAr: 'أرباح مدفوعة', labelEn: 'Paid Earnings' },
-    { value: '150+', labelAr: 'دولة', labelEn: 'Countries' },
+    { value: '1M+', labelAr: 'Ø±Ø§Ø¨Ø· ÙØ®ØªØµØ±', labelEn: 'Shortened Links' },
+    { value: '500K+', labelAr: 'ÙØ³ØªØ®Ø¯Ù ÙØ´Ø·', labelEn: 'Active Users' },
+    { value: '$2M+', labelAr: 'Ø£Ø±Ø¨Ø§Ø­ ÙØ¯ÙÙØ¹Ø©', labelEn: 'Paid Earnings' },
+    { value: '150+', labelAr: 'Ø¯ÙÙØ©', labelEn: 'Countries' },
   ];
 
   const testimonials = [
     {
-      name: 'أحمد محمد',
-      country: 'السعودية',
-      text: 'أفضل منصة لاختصار الروابط. أرباحي تضاعفت خلال شهر واحد!',
+      name: 'Ø£Ø­ÙØ¯ ÙØ­ÙØ¯',
+      country: 'Ø§ÙØ³Ø¹ÙØ¯ÙØ©',
+      text: 'Ø£ÙØ¶Ù ÙÙØµØ© ÙØ§Ø®ØªØµØ§Ø± Ø§ÙØ±ÙØ§Ø¨Ø·. Ø£Ø±Ø¨Ø§Ø­Ù ØªØ¶Ø§Ø¹ÙØª Ø®ÙØ§Ù Ø´ÙØ± ÙØ§Ø­Ø¯!',
       avatar: 'A'
     },
     {
@@ -115,9 +144,9 @@ export default function HomePage() {
       avatar: 'S'
     },
     {
-      name: 'محمد علي',
-      country: 'مصر',
-      text: 'نظام الإحالة ممتاز، أربح من كل شخص يسجل برابطي.',
+      name: 'ÙØ­ÙØ¯ Ø¹ÙÙ',
+      country: 'ÙØµØ±',
+      text: 'ÙØ¸Ø§Ù Ø§ÙØ¥Ø­Ø§ÙØ© ÙÙØªØ§Ø²Ø Ø£Ø±Ø¨Ø­ ÙÙ ÙÙ Ø´Ø®Øµ ÙØ³Ø¬Ù Ø¨Ø±Ø§Ø¨Ø·Ù.',
       avatar: 'M'
     },
   ];
@@ -134,18 +163,18 @@ export default function HomePage() {
           <div className="container relative px-4 py-20 md:py-32">
             <div className="text-center max-w-4xl mx-auto">
               <Badge className="mb-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                {language === 'ar' ? '🚀 منصة #1 لاختصار الروابط' : '🚀 #1 URL Shortener Platform'}
+                {language === 'ar' ? 'ð ÙÙØµØ© #1 ÙØ§Ø®ØªØµØ§Ø± Ø§ÙØ±ÙØ§Ø¨Ø·' : 'ð #1 URL Shortener Platform'}
               </Badge>
               
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                 {language === 'ar' 
-                  ? 'اختصار روابط ذكي مع أرباح حقيقية'
+                  ? 'Ø§Ø®ØªØµØ§Ø± Ø±ÙØ§Ø¨Ø· Ø°ÙÙ ÙØ¹ Ø£Ø±Ø¨Ø§Ø­ Ø­ÙÙÙÙØ©'
                   : 'Smart URL Shortening with Real Earnings'}
               </h1>
               
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 {language === 'ar'
-                  ? 'حوّل روابطك إلى مصدر دخل. احصل على 50% من أرباح الإعلانات + 20% من نظام الإحالة. دفعات فورية بالعملات الرقمية.'
+                  ? 'Ø­ÙÙÙ Ø±ÙØ§Ø¨Ø·Ù Ø¥ÙÙ ÙØµØ¯Ø± Ø¯Ø®Ù. Ø§Ø­ØµÙ Ø¹ÙÙ 50% ÙÙ Ø£Ø±Ø¨Ø§Ø­ Ø§ÙØ¥Ø¹ÙØ§ÙØ§Øª + 20% ÙÙ ÙØ¸Ø§Ù Ø§ÙØ¥Ø­Ø§ÙØ©. Ø¯ÙØ¹Ø§Øª ÙÙØ±ÙØ© Ø¨Ø§ÙØ¹ÙÙØ§Øª Ø§ÙØ±ÙÙÙØ©.'
                   : 'Turn your links into income. Get 50% of ad revenue + 20% from referrals. Instant payouts in cryptocurrency.'}
               </p>
 
@@ -156,7 +185,7 @@ export default function HomePage() {
                     <Link2 className="w-5 h-5 text-muted-foreground" />
                     <Input
                       type="url"
-                      placeholder={language === 'ar' ? 'أدخل الرابط هنا...' : 'Enter your URL here...'}
+                      placeholder={language === 'ar' ? 'Ø£Ø¯Ø®Ù Ø§ÙØ±Ø§Ø¨Ø· ÙÙØ§...' : 'Enter your URL here...'}
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                       className="border-0 focus-visible:ring-0 text-base"
@@ -170,7 +199,7 @@ export default function HomePage() {
                     {loading ? (
                       <span className="animate-pulse">...</span>
                     ) : language === 'ar' ? (
-                      'اختصار'
+                      'Ø§Ø®ØªØµØ§Ø±'
                     ) : (
                       'Shorten'
                     )}
@@ -190,13 +219,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
                   <Link href="/register">
-                    {language === 'ar' ? 'ابدأ الآن مجاناً' : 'Start Free Now'}
+                    {language === 'ar' ? 'Ø§Ø¨Ø¯Ø£ Ø§ÙØ¢Ù ÙØ¬Ø§ÙØ§Ù' : 'Start Free Now'}
                     <ArrowRight className="w-4 h-4 mr-2" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
                   <Link href="/dashboard">
-                    {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+                    {language === 'ar' ? 'ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ' : 'Dashboard'}
                   </Link>
                 </Button>
               </div>
@@ -223,11 +252,11 @@ export default function HomePage() {
           <div className="container px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {language === 'ar' ? 'لماذا linkat.bid؟' : 'Why linkat.bid?'}
+                {language === 'ar' ? 'ÙÙØ§Ø°Ø§ linkat.bidØ' : 'Why linkat.bid?'}
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
                 {language === 'ar'
-                  ? 'منصة متكاملة تجمع بين سهولة الاستخدام والأرباح الحقيقية'
+                  ? 'ÙÙØµØ© ÙØªÙØ§ÙÙØ© ØªØ¬ÙØ¹ Ø¨ÙÙ Ø³ÙÙÙØ© Ø§ÙØ§Ø³ØªØ®Ø¯Ø§Ù ÙØ§ÙØ£Ø±Ø¨Ø§Ø­ Ø§ÙØ­ÙÙÙÙØ©'
                   : 'A complete platform combining ease of use with real earnings'}
               </p>
             </div>
@@ -259,11 +288,11 @@ export default function HomePage() {
           <div className="container px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {language === 'ar' ? 'خطط الأسعار' : 'Pricing Plans'}
+                {language === 'ar' ? 'Ø®Ø·Ø· Ø§ÙØ£Ø³Ø¹Ø§Ø±' : 'Pricing Plans'}
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
                 {language === 'ar'
-                  ? 'اختر الخطة المناسبة لك. التسجيل مجاني!'
+                  ? 'Ø§Ø®ØªØ± Ø§ÙØ®Ø·Ø© Ø§ÙÙÙØ§Ø³Ø¨Ø© ÙÙ. Ø§ÙØªØ³Ø¬ÙÙ ÙØ¬Ø§ÙÙ!'
                   : 'Choose the plan that suits you. Registration is free!'}
               </p>
             </div>
@@ -273,12 +302,12 @@ export default function HomePage() {
               <Card className="relative">
                 <CardHeader>
                   <CardTitle className="text-xl">
-                    {language === 'ar' ? 'مجاني' : 'Free'}
+                    {language === 'ar' ? 'ÙØ¬Ø§ÙÙ' : 'Free'}
                   </CardTitle>
                   <div className="text-4xl font-bold mt-2">
                     $0
                     <span className="text-base font-normal text-muted-foreground">
-                      /{language === 'ar' ? 'للأبد' : 'forever'}
+                      /{language === 'ar' ? 'ÙÙØ£Ø¨Ø¯' : 'forever'}
                     </span>
                   </div>
                 </CardHeader>
@@ -286,28 +315,28 @@ export default function HomePage() {
                   <ul className="space-y-3">
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-emerald-500" />
-                      <span>{language === 'ar' ? '50% من أرباح الإعلانات' : '50% of ad revenue'}</span>
+                      <span>{language === 'ar' ? '50% ÙÙ Ø£Ø±Ø¨Ø§Ø­ Ø§ÙØ¥Ø¹ÙØ§ÙØ§Øª' : '50% of ad revenue'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-emerald-500" />
-                      <span>{language === 'ar' ? 'روابط غير محدودة' : 'Unlimited links'}</span>
+                      <span>{language === 'ar' ? 'Ø±ÙØ§Ø¨Ø· ØºÙØ± ÙØ­Ø¯ÙØ¯Ø©' : 'Unlimited links'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-emerald-500" />
-                      <span>{language === 'ar' ? 'إحصائيات أساسية' : 'Basic analytics'}</span>
+                      <span>{language === 'ar' ? 'Ø¥Ø­ØµØ§Ø¦ÙØ§Øª Ø£Ø³Ø§Ø³ÙØ©' : 'Basic analytics'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-emerald-500" />
-                      <span>{language === 'ar' ? 'نظام الإحالة 20%' : '20% referral system'}</span>
+                      <span>{language === 'ar' ? 'ÙØ¸Ø§Ù Ø§ÙØ¥Ø­Ø§ÙØ© 20%' : '20% referral system'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-emerald-500" />
-                      <span>{language === 'ar' ? 'حد سحب $5' : '$5 withdrawal limit'}</span>
+                      <span>{language === 'ar' ? 'Ø­Ø¯ Ø³Ø­Ø¨ $5' : '$5 withdrawal limit'}</span>
                     </li>
                   </ul>
                   <Button asChild variant="outline" className="w-full mt-4">
                     <Link href="/register">
-                      {language === 'ar' ? 'ابدأ مجاناً' : 'Start Free'}
+                      {language === 'ar' ? 'Ø§Ø¨Ø¯Ø£ ÙØ¬Ø§ÙØ§Ù' : 'Start Free'}
                     </Link>
                   </Button>
                 </CardContent>
@@ -327,35 +356,35 @@ export default function HomePage() {
                     {language === 'ar' ? 'VIP' : 'VIP'}
                   </CardTitle>
                   <div className="text-4xl font-bold mt-2">
-                    {language === 'ar' ? 'بالدعوة فقط' : 'Invite Only'}
+                    {language === 'ar' ? 'Ø¨Ø§ÙØ¯Ø¹ÙØ© ÙÙØ·' : 'Invite Only'}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-3">
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-amber-500" />
-                      <span className="font-medium">{language === 'ar' ? '70% من أرباح الإعلانات' : '70% of ad revenue'}</span>
+                      <span className="font-medium">{language === 'ar' ? '70% ÙÙ Ø£Ø±Ø¨Ø§Ø­ Ø§ÙØ¥Ø¹ÙØ§ÙØ§Øª' : '70% of ad revenue'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-amber-500" />
-                      <span>{language === 'ar' ? 'روابط مخصصة VIP' : 'VIP custom links'}</span>
+                      <span>{language === 'ar' ? 'Ø±ÙØ§Ø¨Ø· ÙØ®ØµØµØ© VIP' : 'VIP custom links'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-amber-500" />
-                      <span>{language === 'ar' ? 'إحصائيات متقدمة' : 'Advanced analytics'}</span>
+                      <span>{language === 'ar' ? 'Ø¥Ø­ØµØ§Ø¦ÙØ§Øª ÙØªÙØ¯ÙØ©' : 'Advanced analytics'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-amber-500" />
-                      <span>{language === 'ar' ? 'دعم أولوية' : 'Priority support'}</span>
+                      <span>{language === 'ar' ? 'Ø¯Ø¹Ù Ø£ÙÙÙÙØ©' : 'Priority support'}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-amber-500" />
-                      <span>{language === 'ar' ? 'سحب فوري' : 'Instant withdrawal'}</span>
+                      <span>{language === 'ar' ? 'Ø³Ø­Ø¨ ÙÙØ±Ù' : 'Instant withdrawal'}</span>
                     </li>
                   </ul>
                   <Button asChild className="w-full mt-4 bg-amber-500 hover:bg-amber-600">
                     <Link href="/upgrade">
-                      {language === 'ar' ? 'ترقية الآن' : 'Upgrade Now'}
+                      {language === 'ar' ? 'ØªØ±ÙÙØ© Ø§ÙØ¢Ù' : 'Upgrade Now'}
                       <ChevronRight className="w-4 h-4 mr-1" />
                     </Link>
                   </Button>
@@ -370,7 +399,7 @@ export default function HomePage() {
           <div className="container px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {language === 'ar' ? 'ماذا يقول المستخدمون؟' : 'What Users Say?'}
+                {language === 'ar' ? 'ÙØ§Ø°Ø§ ÙÙÙÙ Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙØ' : 'What Users Say?'}
               </h2>
             </div>
 
@@ -401,16 +430,16 @@ export default function HomePage() {
         <section className="py-20 bg-gradient-to-r from-emerald-600 to-teal-600">
           <div className="container px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              {language === 'ar' ? 'مستعد لبدء الربح؟' : 'Ready to Start Earning?'}
+              {language === 'ar' ? 'ÙØ³ØªØ¹Ø¯ ÙØ¨Ø¯Ø¡ Ø§ÙØ±Ø¨Ø­Ø' : 'Ready to Start Earning?'}
             </h2>
             <p className="text-emerald-100 mb-8 max-w-2xl mx-auto">
               {language === 'ar'
-                ? 'انضم إلى آلاف المستخدمين الذين يربحون المال من روابطهم يومياً'
+                ? 'Ø§ÙØ¶Ù Ø¥ÙÙ Ø¢ÙØ§Ù Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ Ø§ÙØ°ÙÙ ÙØ±Ø¨Ø­ÙÙ Ø§ÙÙØ§Ù ÙÙ Ø±ÙØ§Ø¨Ø·ÙÙ ÙÙÙÙØ§Ù'
                 : 'Join thousands of users earning money from their links daily'}
             </p>
             <Button asChild size="lg" variant="secondary" className="bg-white text-emerald-700 hover:bg-emerald-50">
               <Link href="/register">
-                {language === 'ar' ? 'إنشاء حساب مجاني' : 'Create Free Account'}
+                {language === 'ar' ? 'Ø¥ÙØ´Ø§Ø¡ Ø­Ø³Ø§Ø¨ ÙØ¬Ø§ÙÙ' : 'Create Free Account'}
                 <ArrowRight className="w-4 h-4 mr-2" />
               </Link>
             </Button>
