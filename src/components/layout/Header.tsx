@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -44,19 +44,51 @@ const languages = [
 ];
 
 export function Header() {
-  const { user, isAuthenticated, language, setLanguage, theme, setTheme } = useAppStore();
-  const { signOut, refreshUserData } = useAuth();
+  const { user, isAuthenticated, language, setLanguage, theme, setTheme, setUser } = useAppStore();
+  const { signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  // Refresh user data on mount to get latest role
+  // Check if user is admin from backend
+  const checkAdminRole = useCallback(async () => {
+    if (!user?.email) return;
+    
+    try {
+      const res = await fetch(`/api/user/refresh?email=${encodeURIComponent(user.email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          // Update the store with fresh user data
+          setUser({
+            ...user,
+            role: data.user.role,
+            balance: data.user.balance,
+            referralBalance: data.user.referralBalance,
+          });
+          setIsAdmin(data.user.role === 'admin');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check admin role:', error);
+    }
+  }, [user, setUser]);
+
+  // Check admin role on mount and when user changes
   useEffect(() => {
     if (isAuthenticated && user?.email) {
-      refreshUserData();
+      checkAdminRole();
     }
-  }, []);
+  }, [isAuthenticated, user?.email, checkAdminRole]);
+
+  // Also check based on current user role
+  useEffect(() => {
+    if (user?.role) {
+      setIsAdmin(user.role.toLowerCase() === 'admin');
+    }
+  }, [user?.role]);
 
   // Apply theme to document
   useEffect(() => {
@@ -88,7 +120,6 @@ export function Header() {
     setLoggingOut(true);
     try {
       await signOut();
-      // Redirect to home page after logout
       router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
@@ -242,7 +273,7 @@ export function Header() {
                       {language === 'ar' ? 'المحفظة' : 'Wallet'}
                     </Link>
                   </DropdownMenuItem>
-                  {user.role?.toLowerCase() === 'admin' && (
+                  {isAdmin && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
@@ -341,6 +372,17 @@ export function Header() {
                   {lang.name}
                 </button>
               ))}
+              {/* Mobile Admin Link */}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 py-2 text-sm text-emerald-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Settings className="w-4 h-4" />
+                  {language === 'ar' ? 'إدارة الموقع' : 'Admin Panel'}
+                </Link>
+              )}
               {/* Mobile Logout */}
               {isAuthenticated && user && (
                 <button
