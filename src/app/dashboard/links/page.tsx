@@ -47,13 +47,33 @@ interface LinkItem {
 }
 
 export default function LinksPage() {
-  const { language } = useAppStore();
-  const [links, setLinks] = useState<LinkItem[]>([
+  const { user, language } = useAppStore();
+  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [initialLinks, setInitialLinks] = useState<LinkItem[]>([
     { id: '1', shortCode: 'abc123', targetUrl: 'https://example.com/1', clicks: 150, earnings: 0.15, status: 'active', createdAt: new Date().toISOString() },
     { id: '2', shortCode: 'xyz789', targetUrl: 'https://example.com/2', clicks: 89, earnings: 0.09, status: 'active', createdAt: new Date().toISOString() },
     { id: '3', shortCode: 'test!', targetUrl: 'https://example.com/3', clicks: 45, earnings: 0.05, status: 'paused', createdAt: new Date().toISOString() },
   ]);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const fetchLinks = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await fetch('/api/user/links', {
+          headers: { 'x-user-id': user.id }
+        });
+        const data = await res.json();
+        if (data.success) setLinks(data.links);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLinks();
+  }, [user?.id]);
 
   const filteredLinks = links.filter(link => 
     link.shortCode.toLowerCase().includes(search.toLowerCase()) ||
@@ -69,16 +89,16 @@ export default function LinksPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold mb-1">
-            {language === 'ar' ? 'روابطي' : 'My Links'}
+            {language === 'ar' ? 'Ø±ÙØ§Ø¨Ø·Ù' : 'My Links'}
           </h1>
           <p className="text-muted-foreground">
-            {links.length} {language === 'ar' ? 'رابط' : 'links'}
+            {links.length} {language === 'ar' ? 'Ø±Ø§Ø¨Ø·' : 'links'}
           </p>
         </div>
         <Button asChild className="bg-emerald-500 hover:bg-emerald-600">
           <Link href="/dashboard/create">
             <Link2 className="w-4 h-4 mr-2" />
-            {language === 'ar' ? 'إنشاء رابط جديد' : 'Create New Link'}
+            {language === 'ar' ? 'Ø¥ÙØ´Ø§Ø¡ Ø±Ø§Ø¨Ø· Ø¬Ø¯ÙØ¯' : 'Create New Link'}
           </Link>
         </Button>
       </div>
@@ -89,7 +109,7 @@ export default function LinksPage() {
             <div className="relative flex-1">
               <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={language === 'ar' ? 'بحث في الروابط...' : 'Search links...'}
+                placeholder={language === 'ar' ? 'Ø¨Ø­Ø« ÙÙ Ø§ÙØ±ÙØ§Ø¨Ø·...' : 'Search links...'}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pr-10"
@@ -106,13 +126,13 @@ export default function LinksPage() {
               <Link2 className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
               <p className="text-muted-foreground mb-4">
                 {search 
-                  ? (language === 'ar' ? 'لا توجد نتائج' : 'No results found')
-                  : (language === 'ar' ? 'لا توجد روابط بعد' : 'No links yet')}
+                  ? (language === 'ar' ? 'ÙØ§ ØªÙØ¬Ø¯ ÙØªØ§Ø¦Ø¬' : 'No results found')
+                  : (language === 'ar' ? 'ÙØ§ ØªÙØ¬Ø¯ Ø±ÙØ§Ø¨Ø· Ø¨Ø¹Ø¯' : 'No links yet')}
               </p>
               {!search && (
                 <Button asChild className="bg-emerald-500 hover:bg-emerald-600">
                   <Link href="/dashboard/create">
-                    {language === 'ar' ? 'إنشاء أول رابط' : 'Create your first link'}
+                    {language === 'ar' ? 'Ø¥ÙØ´Ø§Ø¡ Ø£ÙÙ Ø±Ø§Ø¨Ø·' : 'Create your first link'}
                   </Link>
                 </Button>
               )}
@@ -122,11 +142,11 @@ export default function LinksPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{language === 'ar' ? 'الرابط المختصر' : 'Short Link'}</TableHead>
-                    <TableHead className="hidden md:table-cell">{language === 'ar' ? 'الهدف' : 'Target'}</TableHead>
-                    <TableHead className="text-center">{language === 'ar' ? 'النقرات' : 'Clicks'}</TableHead>
-                    <TableHead className="text-center">{language === 'ar' ? 'الأرباح' : 'Earnings'}</TableHead>
-                    <TableHead className="text-center">{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'Ø§ÙØ±Ø§Ø¨Ø· Ø§ÙÙØ®ØªØµØ±' : 'Short Link'}</TableHead>
+                    <TableHead className="hidden md:table-cell">{language === 'ar' ? 'Ø§ÙÙØ¯Ù' : 'Target'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'Ø§ÙÙÙØ±Ø§Øª' : 'Clicks'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'Ø§ÙØ£Ø±Ø¨Ø§Ø­' : 'Earnings'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'Ø§ÙØ­Ø§ÙØ©' : 'Status'}</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -165,8 +185,8 @@ export default function LinksPage() {
                           className={link.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : ''}
                         >
                           {link.status === 'active' 
-                            ? (language === 'ar' ? 'نشط' : 'Active')
-                            : (language === 'ar' ? 'متوقف' : 'Paused')}
+                            ? (language === 'ar' ? 'ÙØ´Ø·' : 'Active')
+                            : (language === 'ar' ? 'ÙØªÙÙÙ' : 'Paused')}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -179,33 +199,33 @@ export default function LinksPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Eye className="w-4 h-4 mr-2" />
-                              {language === 'ar' ? 'عرض' : 'View'}
+                              {language === 'ar' ? 'Ø¹Ø±Ø¶' : 'View'}
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <BarChart3 className="w-4 h-4 mr-2" />
-                              {language === 'ar' ? 'الإحصائيات' : 'Analytics'}
+                              {language === 'ar' ? 'Ø§ÙØ¥Ø­ØµØ§Ø¦ÙØ§Øª' : 'Analytics'}
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Edit className="w-4 h-4 mr-2" />
-                              {language === 'ar' ? 'تعديل' : 'Edit'}
+                              {language === 'ar' ? 'ØªØ¹Ø¯ÙÙ' : 'Edit'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem>
                               {link.status === 'active' ? (
                                 <>
                                   <Pause className="w-4 h-4 mr-2" />
-                                  {language === 'ar' ? 'إيقاف' : 'Pause'}
+                                  {language === 'ar' ? 'Ø¥ÙÙØ§Ù' : 'Pause'}
                                 </>
                               ) : (
                                 <>
                                   <Play className="w-4 h-4 mr-2" />
-                                  {language === 'ar' ? 'تفعيل' : 'Activate'}
+                                  {language === 'ar' ? 'ØªÙØ¹ÙÙ' : 'Activate'}
                                 </>
                               )}
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600">
                               <Trash2 className="w-4 h-4 mr-2" />
-                              {language === 'ar' ? 'حذف' : 'Delete'}
+                              {language === 'ar' ? 'Ø­Ø°Ù' : 'Delete'}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
