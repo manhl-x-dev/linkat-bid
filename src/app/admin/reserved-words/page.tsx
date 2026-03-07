@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,29 @@ export default function AdminReservedWordsPage() {
   const { language } = useAppStore();
   const [newWord, setNewWord] = useState('');
   const [loading, setLoading] = useState(false);
-  const [words, setWords] = useState([
-    'admin', 'api', 'login', 'register', 'dashboard', 'settings', 
-    'wallet', 'withdraw', 'user', 'users', 'links', 'blog',
-    'privacy', 'terms', 'faq', 'contact', 'help', 'referral'
-  ]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [words, setWords] = useState<string[]>([]);
+  const [deletingWord, setDeletingWord] = useState<string | null>(null);
+
+  // Load words from database
+  const loadWords = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/reserved-words');
+      const data = await res.json();
+      if (data.success) {
+        setWords(data.words);
+      }
+    } catch (error) {
+      console.error('Error loading reserved words:', error);
+      toast.error(language === 'ar' ? 'فشل تحميل الكلمات المحجوزة' : 'Failed to load reserved words');
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [language]);
+
+  useEffect(() => {
+    loadWords();
+  }, [loadWords]);
 
   const handleAdd = async () => {
     if (!newWord.trim()) {
@@ -33,21 +51,55 @@ export default function AdminReservedWordsPage() {
     }
     
     setLoading(true);
-    await new Promise(r => setTimeout(r, 400));
     
-    setWords(prev => [...prev, word]);
-    setNewWord('');
-    toast.success(language === 'ar' ? `تم إضافة "${word}" إلى الكلمات المحجوزة` : `"${word}" added to reserved words`);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/admin/reserved-words', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setWords(prev => [...prev, word].sort());
+        setNewWord('');
+        toast.success(language === 'ar' ? `تم إضافة "${word}" إلى الكلمات المحجوزة` : `"${word}" added to reserved words`);
+      } else {
+        toast.error(data.error || (language === 'ar' ? 'فشل إضافة الكلمة' : 'Failed to add word'));
+      }
+    } catch (error) {
+      console.error('Error adding word:', error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء إضافة الكلمة' : 'Error adding word');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemove = async (word: string) => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 300));
+    setDeletingWord(word);
     
-    setWords(prev => prev.filter(w => w !== word));
-    toast.info(language === 'ar' ? `تم إزالة "${word}" من الكلمات المحجوزة` : `"${word}" removed from reserved words`);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/admin/reserved-words', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setWords(prev => prev.filter(w => w !== word));
+        toast.info(language === 'ar' ? `تم إزالة "${word}" من الكلمات المحجوزة` : `"${word}" removed from reserved words`);
+      } else {
+        toast.error(data.error || (language === 'ar' ? 'فشل حذف الكلمة' : 'Failed to remove word'));
+      }
+    } catch (error) {
+      console.error('Error removing word:', error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء حذف الكلمة' : 'Error removing word');
+    } finally {
+      setDeletingWord(null);
+    }
   };
 
   return (
@@ -86,6 +138,7 @@ export default function AdminReservedWordsPage() {
                 onChange={(e) => setNewWord(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                 className="flex-1"
+                disabled={loading}
               />
               <Button 
                 onClick={handleAdd} 
@@ -133,26 +186,40 @@ export default function AdminReservedWordsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {words.sort().map((w) => (
-                <div 
-                  key={w} 
-                  className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <span className="font-mono text-sm">{w}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6 hover:bg-red-100 dark:hover:bg-red-900"
-                    onClick={() => handleRemove(w)}
-                    disabled={loading}
-                    title={language === 'ar' ? 'حذف' : 'Delete'}
+            {initialLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : words.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {language === 'ar' ? 'لا توجد كلمات محجوزة' : 'No reserved words'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {words.map((w) => (
+                  <div 
+                    key={w} 
+                    className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <Trash2 className="w-3 h-3 text-red-500" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+                    <span className="font-mono text-sm">{w}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 hover:bg-red-100 dark:hover:bg-red-900"
+                      onClick={() => handleRemove(w)}
+                      disabled={deletingWord === w}
+                      title={language === 'ar' ? 'حذف' : 'Delete'}
+                    >
+                      {deletingWord === w ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-red-500" />
+                      ) : (
+                        <Trash2 className="w-3 h-3 text-red-500" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
