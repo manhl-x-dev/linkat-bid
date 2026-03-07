@@ -1,13 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Default reserved words
+const DEFAULT_WORDS = [
+  'admin', 'api', 'login', 'register', 'dashboard', 'settings', 
+  'wallet', 'withdraw', 'user', 'users', 'links', 'blog',
+  'privacy', 'terms', 'faq', 'contact', 'help', 'referral',
+  'logout', 'profile', 'account', 'verify', 'reset', 'password',
+  'email', 'notifications', 'earnings', 'stats', 'analytics'
+];
+
 // GET - Fetch all reserved words
 export async function GET() {
   try {
-    const words = await db.reservedWord.findMany({
+    let words = await db.reservedWord.findMany({
       where: { isActive: true },
       orderBy: { word: 'asc' }
     });
+    
+    // If no words in database, seed with defaults
+    if (words.length === 0) {
+      // Insert one by one to handle SQLite limitation
+      for (const word of DEFAULT_WORDS) {
+        try {
+          await db.reservedWord.create({
+            data: { word, reason: 'system', isActive: true }
+          });
+        } catch {
+          // Skip if already exists
+        }
+      }
+      
+      words = await db.reservedWord.findMany({
+        where: { isActive: true },
+        orderBy: { word: 'asc' }
+      });
+    }
     
     return NextResponse.json({ 
       success: true, 
@@ -31,6 +59,10 @@ export async function POST(request: NextRequest) {
     
     const normalizedWord = word.toLowerCase().trim();
     
+    if (normalizedWord.length < 1) {
+      return NextResponse.json({ success: false, error: 'Word too short' }, { status: 400 });
+    }
+    
     // Check if word already exists
     const existing = await db.reservedWord.findUnique({
       where: { word: normalizedWord }
@@ -48,7 +80,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Create new
       await db.reservedWord.create({
-        data: { word: normalizedWord, reason: 'admin' }
+        data: { word: normalizedWord, reason: 'admin', isActive: true }
       });
     }
     
@@ -70,6 +102,14 @@ export async function DELETE(request: NextRequest) {
     }
     
     const normalizedWord = word.toLowerCase().trim();
+    
+    const existing = await db.reservedWord.findUnique({
+      where: { word: normalizedWord }
+    });
+    
+    if (!existing) {
+      return NextResponse.json({ success: false, error: 'Word not found' }, { status: 404 });
+    }
     
     await db.reservedWord.update({
       where: { word: normalizedWord },
