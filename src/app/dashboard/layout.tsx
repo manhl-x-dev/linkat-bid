@@ -44,7 +44,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   // Determine sidebar type based on user role
-  const sidebarType = user?.isVip ? 'vip' : 'user';
+  const OWNER_EMAIL = 'manhl.aboufakher@gmail.com';
+  const isAdmin = user?.role?.toLowerCase() === 'admin' || user?.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+  const sidebarType = isAdmin ? 'admin' : (user?.isVip ? 'vip' : 'user');
 
   return (
     <div className="min-h-screen flex flex-col">
