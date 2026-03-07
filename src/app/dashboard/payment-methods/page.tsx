@@ -9,16 +9,42 @@ import { Label } from '@/components/ui/label';
 import { Wallet, Plus, Trash2, Check, Loader2 } from 'lucide-react';
 
 export default function PaymentMethodsPage() {
-  const { language } = useAppStore();
+  const { user, language } = useAppStore();
   const [showAdd, setShowAdd] = useState(false);
   const [newAddress, setNewAddress] = useState('');
   const [newNetwork, setNewNetwork] = useState('TRC20');
-  const [wallets, setWallets] = useState([
+  const [wallets, setWallets] = useState(user?.walletAddress ? [{ id: 1, address: user.walletAddress, network: user.walletNetwork || 'TRC20', isDefault: true }] : [
     { id: 1, address: 'TKx...abc123', network: 'TRC20', isDefault: true }
   ]);
   const [saving, setSaving] = useState(false);
 
   const handleAdd = async () => {
+    if (!newAddress) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/user/wallet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user?.id || ''
+        },
+        body: JSON.stringify({
+          walletAddress: newAddress,
+          walletNetwork: newNetwork
+        })
+      });
+      if (res.ok) {
+        setWallets([{ id: Date.now(), address: newAddress, network: newNetwork, isDefault: true }]);
+        setShowAdd(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const oldHandleAdd = async () => {
     if (!newAddress) return;
     setSaving(true);
     await new Promise(r => setTimeout(r, 1000));
@@ -49,15 +75,15 @@ export default function PaymentMethodsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold mb-1">
-            {language === 'ar' ? 'طرق الدفع' : 'Payment Methods'}
+            {language === 'ar' ? 'Ø·Ø±Ù Ø§ÙØ¯ÙØ¹' : 'Payment Methods'}
           </h1>
           <p className="text-muted-foreground">
-            {language === 'ar' ? 'إدارة محافظ USDT للسحب' : 'Manage USDT wallets for withdrawals'}
+            {language === 'ar' ? 'Ø¥Ø¯Ø§Ø±Ø© ÙØ­Ø§ÙØ¸ USDT ÙÙØ³Ø­Ø¨' : 'Manage USDT wallets for withdrawals'}
           </p>
         </div>
         <Button onClick={() => setShowAdd(!showAdd)} className="bg-emerald-500 hover:bg-emerald-600">
           <Plus className="w-4 h-4 ml-2" />
-          {language === 'ar' ? 'إضافة محفظة' : 'Add Wallet'}
+          {language === 'ar' ? 'Ø¥Ø¶Ø§ÙØ© ÙØ­ÙØ¸Ø©' : 'Add Wallet'}
         </Button>
       </div>
 
@@ -65,11 +91,11 @@ export default function PaymentMethodsPage() {
       {showAdd && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">{language === 'ar' ? 'إضافة محفظة USDT' : 'Add USDT Wallet'}</CardTitle>
+            <CardTitle className="text-base">{language === 'ar' ? 'Ø¥Ø¶Ø§ÙØ© ÙØ­ÙØ¸Ø© USDT' : 'Add USDT Wallet'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>{language === 'ar' ? 'عنوان المحفظة' : 'Wallet Address'}</Label>
+              <Label>{language === 'ar' ? 'Ø¹ÙÙØ§Ù Ø§ÙÙØ­ÙØ¸Ø©' : 'Wallet Address'}</Label>
               <Input 
                 placeholder="T..." 
                 value={newAddress} 
@@ -78,7 +104,7 @@ export default function PaymentMethodsPage() {
               />
             </div>
             <div>
-              <Label>{language === 'ar' ? 'الشبكة' : 'Network'}</Label>
+              <Label>{language === 'ar' ? 'Ø§ÙØ´Ø¨ÙØ©' : 'Network'}</Label>
               <div className="flex gap-2 mt-1.5">
                 <Button 
                   variant={newNetwork === 'TRC20' ? 'default' : 'outline'} 
@@ -98,10 +124,10 @@ export default function PaymentMethodsPage() {
             </div>
             <div className="flex gap-2">
               <Button onClick={handleAdd} disabled={saving || !newAddress} className="bg-emerald-500 hover:bg-emerald-600">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : language === 'ar' ? 'حفظ' : 'Save'}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : language === 'ar' ? 'Ø­ÙØ¸' : 'Save'}
               </Button>
               <Button variant="outline" onClick={() => setShowAdd(false)}>
-                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                {language === 'ar' ? 'Ø¥ÙØºØ§Ø¡' : 'Cancel'}
               </Button>
             </div>
           </CardContent>
@@ -114,7 +140,7 @@ export default function PaymentMethodsPage() {
           <Card>
             <CardContent className="pt-6 text-center text-muted-foreground">
               <Wallet className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>{language === 'ar' ? 'لا توجد محافظ محفوظة' : 'No saved wallets'}</p>
+              <p>{language === 'ar' ? 'ÙØ§ ØªÙØ¬Ø¯ ÙØ­Ø§ÙØ¸ ÙØ­ÙÙØ¸Ø©' : 'No saved wallets'}</p>
             </CardContent>
           </Card>
         ) : (
@@ -131,7 +157,7 @@ export default function PaymentMethodsPage() {
                         <p className="font-mono">{w.address}</p>
                         {w.isDefault && (
                           <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 rounded text-xs">
-                            {language === 'ar' ? 'افتراضية' : 'Default'}
+                            {language === 'ar' ? 'Ø§ÙØªØ±Ø§Ø¶ÙØ©' : 'Default'}
                           </span>
                         )}
                       </div>
