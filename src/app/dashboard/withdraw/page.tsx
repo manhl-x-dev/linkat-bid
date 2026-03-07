@@ -35,38 +35,57 @@ export default function WithdrawPage() {
     
     if (numAmount < minWithdrawal) {
       setError(language === 'ar' 
-        ? `الحد الأدنى للسحب هو $${minWithdrawal}` 
+        ? `Ø§ÙØ­Ø¯ Ø§ÙØ£Ø¯ÙÙ ÙÙØ³Ø­Ø¨ ÙÙ $${minWithdrawal}` 
         : `Minimum withdrawal is $${minWithdrawal}`);
       return;
     }
 
     if (numAmount > balance) {
-      setError(language === 'ar' ? 'الرصيد غير كافٍ' : 'Insufficient balance');
+      setError(language === 'ar' ? 'Ø§ÙØ±ØµÙØ¯ ØºÙØ± ÙØ§ÙÙ' : 'Insufficient balance');
       return;
     }
 
     if (!walletAddress) {
-      setError(language === 'ar' ? 'يرجى إدخال عنوان المحفظة' : 'Please enter wallet address');
+      setError(language === 'ar' ? 'ÙØ±Ø¬Ù Ø¥Ø¯Ø®Ø§Ù Ø¹ÙÙØ§Ù Ø§ÙÙØ­ÙØ¸Ø©' : 'Please enter wallet address');
       return;
     }
 
     setLoading(true);
     
-    // Simulate withdrawal
-    setTimeout(() => {
-      setSuccess(true);
+    try {
+      const res = await fetch('/api/user/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user?.id || ''
+        },
+        body: JSON.stringify({
+          amount: numAmount,
+          walletAddress,
+          walletNetwork: network
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess(true);
+      } else {
+        setError(data.error || 'Error processing withdrawal');
+      }
+    } catch (err) {
+      setError('Connection error');
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">
-          {language === 'ar' ? 'سحب الأرباح' : 'Withdraw Earnings'}
+          {language === 'ar' ? 'Ø³Ø­Ø¨ Ø§ÙØ£Ø±Ø¨Ø§Ø­' : 'Withdraw Earnings'}
         </h1>
         <p className="text-muted-foreground">
-          {language === 'ar' ? 'سحب أرباحك بالعملات الرقمية' : 'Withdraw your earnings in cryptocurrency'}
+          {language === 'ar' ? 'Ø³Ø­Ø¨ Ø£Ø±Ø¨Ø§Ø­Ù Ø¨Ø§ÙØ¹ÙÙØ§Øª Ø§ÙØ±ÙÙÙØ©' : 'Withdraw your earnings in cryptocurrency'}
         </p>
       </div>
 
@@ -77,16 +96,16 @@ export default function WithdrawPage() {
               <Check className="w-8 h-8 text-emerald-600" />
             </div>
             <h3 className="text-lg font-medium mb-2">
-              {language === 'ar' ? 'تم إرسال طلب السحب!' : 'Withdrawal request sent!'}
+              {language === 'ar' ? 'ØªÙ Ø¥Ø±Ø³Ø§Ù Ø·ÙØ¨ Ø§ÙØ³Ø­Ø¨!' : 'Withdrawal request sent!'}
             </h3>
             <p className="text-muted-foreground mb-4">
               {language === 'ar' 
-                ? 'سيتم معالجة طلبك خلال 24 ساعة'
+                ? 'Ø³ÙØªÙ ÙØ¹Ø§ÙØ¬Ø© Ø·ÙØ¨Ù Ø®ÙØ§Ù 24 Ø³Ø§Ø¹Ø©'
                 : 'Your request will be processed within 24 hours'}
             </p>
             <Button asChild className="bg-emerald-500 hover:bg-emerald-600">
               <Link href="/dashboard">
-                {language === 'ar' ? 'العودة للوحة التحكم' : 'Back to Dashboard'}
+                {language === 'ar' ? 'Ø§ÙØ¹ÙØ¯Ø© ÙÙÙØ­Ø© Ø§ÙØªØ­ÙÙ' : 'Back to Dashboard'}
               </Link>
             </Button>
           </CardContent>
@@ -99,7 +118,7 @@ export default function WithdrawPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {language === 'ar' ? 'الرصيد المتاح' : 'Available Balance'}
+                    {language === 'ar' ? 'Ø§ÙØ±ØµÙØ¯ Ø§ÙÙØªØ§Ø­' : 'Available Balance'}
                   </p>
                   <p className="text-3xl font-bold text-emerald-600">
                     ${balance.toFixed(2)}
@@ -112,10 +131,10 @@ export default function WithdrawPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{language === 'ar' ? 'تفاصيل السحب' : 'Withdrawal Details'}</CardTitle>
+              <CardTitle>{language === 'ar' ? 'ØªÙØ§ØµÙÙ Ø§ÙØ³Ø­Ø¨' : 'Withdrawal Details'}</CardTitle>
               <CardDescription>
                 {language === 'ar' 
-                  ? 'الحد الأدنى للسحب: $' + minWithdrawal
+                  ? 'Ø§ÙØ­Ø¯ Ø§ÙØ£Ø¯ÙÙ ÙÙØ³Ø­Ø¨: $' + minWithdrawal
                   : 'Minimum withdrawal: $' + minWithdrawal}
               </CardDescription>
             </CardHeader>
@@ -130,7 +149,7 @@ export default function WithdrawPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="amount">
-                    {language === 'ar' ? 'المبلغ (USD)' : 'Amount (USD)'}
+                    {language === 'ar' ? 'Ø§ÙÙØ¨ÙØº (USD)' : 'Amount (USD)'}
                   </Label>
                   <div className="relative">
                     <span className="absolute right-3 top-3 text-muted-foreground">$</span>
@@ -169,13 +188,13 @@ export default function WithdrawPage() {
                       size="sm"
                       onClick={() => setAmount(balance.toFixed(2))}
                     >
-                      {language === 'ar' ? 'الكل' : 'All'}
+                      {language === 'ar' ? 'Ø§ÙÙÙ' : 'All'}
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'شبكة العملة' : 'Network'}</Label>
+                  <Label>{language === 'ar' ? 'Ø´Ø¨ÙØ© Ø§ÙØ¹ÙÙØ©' : 'Network'}</Label>
                   <RadioGroup value={network} onValueChange={setNetwork} className="flex gap-4">
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="TRC20" id="trc20" />
@@ -190,12 +209,12 @@ export default function WithdrawPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="wallet">
-                    {language === 'ar' ? 'عنوان المحفظة USDT' : 'USDT Wallet Address'}
+                    {language === 'ar' ? 'Ø¹ÙÙØ§Ù Ø§ÙÙØ­ÙØ¸Ø© USDT' : 'USDT Wallet Address'}
                   </Label>
                   <Input
                     id="wallet"
                     type="text"
-                    placeholder={language === 'ar' ? 'أدخل عنوان محفظتك' : 'Enter your wallet address'}
+                    placeholder={language === 'ar' ? 'Ø£Ø¯Ø®Ù Ø¹ÙÙØ§Ù ÙØ­ÙØ¸ØªÙ' : 'Enter your wallet address'}
                     value={walletAddress}
                     onChange={(e) => setWalletAddress(e.target.value)}
                     required
@@ -206,7 +225,7 @@ export default function WithdrawPage() {
                   <AlertCircle className="w-4 h-4" />
                   <AlertDescription className="text-xs">
                     {language === 'ar' 
-                      ? 'تأكد من صحة عنوان المحفظة. لا يمكن التراجع عن المعاملة بعد إرسالها.'
+                      ? 'ØªØ£ÙØ¯ ÙÙ ØµØ­Ø© Ø¹ÙÙØ§Ù Ø§ÙÙØ­ÙØ¸Ø©. ÙØ§ ÙÙÙÙ Ø§ÙØªØ±Ø§Ø¬Ø¹ Ø¹Ù Ø§ÙÙØ¹Ø§ÙÙØ© Ø¨Ø¹Ø¯ Ø¥Ø±Ø³Ø§ÙÙØ§.'
                       : 'Make sure the wallet address is correct. Transactions cannot be reversed.'}
                   </AlertDescription>
                 </Alert>
@@ -219,7 +238,7 @@ export default function WithdrawPage() {
                   {loading ? (
                     <span className="animate-pulse">...</span>
                   ) : language === 'ar' ? (
-                    'طلب السحب'
+                    'Ø·ÙØ¨ Ø§ÙØ³Ø­Ø¨'
                   ) : (
                     'Request Withdrawal'
                   )}
